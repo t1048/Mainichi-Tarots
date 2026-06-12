@@ -1,0 +1,48 @@
+.card {
+  display: inline-block;
+  perspective: 1000px;
+  filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.5));
+  transition: transform var(--dur-base) var(--ease-out);
+}
+
+.inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform var(--dur-slow) var(--ease-in-out);
+}
+
+.card.revealed .inner {
+  transform: rotateY(0deg);
+}
+
+.card:not(.revealed) .inner {
+  transform: rotateY(180deg);
+}
+
+.front,
+.back {
+  position: absolute;
+  inset: 0;
+  border-radius: 10px;
+  overflow: hidden;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  background: var(--color-bg-2);
+}
+
+.back {
+  transform: rotateY(180deg);
+}
+
+.front svg,
+.back svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.flipped {
+  transform: rotate(180deg);
+}

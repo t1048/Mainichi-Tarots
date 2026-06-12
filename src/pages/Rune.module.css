@@ -1,0 +1,194 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.hero {
+  text-align: center;
+  padding-top: var(--space-3);
+}
+
+.lede {
+  color: var(--color-text-muted);
+}
+
+.action {
+  display: flex;
+  justify-content: center;
+}
+
+.stones {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-5);
+  flex-wrap: wrap;
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  background: radial-gradient(ellipse at center, rgba(167, 128, 212, 0.18), transparent 70%);
+  border: 1px dashed var(--color-border);
+  min-height: 200px;
+}
+
+.stoneSlot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 120px;
+}
+
+.label {
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-purple-soft);
+}
+
+.stoneWrap {
+  position: relative;
+  width: 96px;
+  height: 96px;
+}
+
+.back,
+.front {
+  position: absolute;
+  inset: 0;
+  transition: opacity var(--dur-base) var(--ease-out), transform var(--dur-base) var(--ease-out);
+}
+
+.covered .back {
+  opacity: 1;
+}
+
+.covered .front {
+  opacity: 0;
+}
+
+.revealed .back {
+  opacity: 0;
+  transform: scale(0.6);
+}
+
+.revealed .front {
+  opacity: 1;
+  transform: scale(1);
+  animation: pop 0.4s var(--ease-out) both;
+}
+
+.flipped {
+  transform: rotate(180deg);
+}
+
+.veil {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(11, 5, 24, 0.3), rgba(42, 26, 85, 0.5));
+  pointer-events: none;
+}
+
+.stoneMeta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  margin: 0;
+  text-align: center;
+}
+
+.stoneMeta strong {
+  color: var(--color-gold-soft);
+  font-family: var(--font-serif);
+  font-size: 1rem;
+}
+
+.orient {
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+  letter-spacing: 0.1em;
+}
+
+@keyframes pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.6) rotate(-30deg);
+  }
+  60% {
+    transform: scale(1.1) rotate(0);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.results {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 720px) {
+  .results {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+}
+
+.gallery {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.muted {
+  color: var(--color-text-muted);
+}
+
+.galleryList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-2);
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+}
+
+.galleryItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.galleryItem strong {
+  display: block;
+  font-size: 0.95rem;
+  color: var(--color-gold-soft);
+  font-family: var(--font-serif);
+}
+
+.galleryItem small {
+  display: block;
+  font-size: 0.7rem;
+}
+
+.keywords {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.keywords span {
+  font-size: 0.7rem;
+  padding: 1px 8px;
+  border-radius: var(--radius-pill);
+  background: var(--color-bg-2);
+  border: 1px solid var(--color-border);
+  color: var(--color-purple-soft);
+}

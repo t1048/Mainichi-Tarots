@@ -1,0 +1,70 @@
+:root {
+  /* カラー — ダーク × 神秘的 */
+  --color-bg-0: #0b0518;
+  --color-bg-1: #14092a;
+  --color-bg-2: #1f1240;
+  --color-bg-3: #2a1a55;
+  --color-surface: rgba(255, 255, 255, 0.04);
+  --color-surface-strong: rgba(255, 255, 255, 0.08);
+  --color-border: rgba(212, 175, 55, 0.25);
+  --color-border-strong: rgba(212, 175, 55, 0.55);
+  --color-text: #ece5f5;
+  --color-text-muted: #a89cc4;
+  --color-text-faint: #6e608a;
+
+  --color-gold: #d4af37;
+  --color-gold-soft: #e8c766;
+  --color-gold-deep: #8a6f1a;
+  --color-purple: #6b3fa0;
+  --color-purple-soft: #a780d4;
+  --color-indigo: #2a1a55;
+  --color-rose: #d06b8a;
+
+  /* スート(タロット) */
+  --suit-wands: #d96b3a;
+  --suit-cups: #c43d5a;
+  --suit-swords: #6d8fc4;
+  --suit-pentacles: #6da84a;
+
+  /* 運勢色 */
+  --fortune-daikichi: #ffd86b;
+  --fortune-kichi: #f3b95f;
+  --fortune-chukichi: #c8a96a;
+  --fortune-shokichi: #8a8a6a;
+  --fortune-suekichi: #6a6a6a;
+  --fortune-kyo: #5a4a6a;
+  --fortune-daikyo: #3a2a4a;
+
+  /* スペーシング */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+
+  /* 半径 */
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-pill: 999px;
+
+  /* フォント */
+  --font-sans: "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic UI", "Meiryo", system-ui, -apple-system, sans-serif;
+  --font-serif: "Hiragino Mincho ProN", "Yu Mincho", "MS Mincho", serif;
+  --font-mono: ui-monospace, "SFMono-Regular", Menlo, monospace;
+
+  /* シャドウ */
+  --shadow-soft: 0 8px 24px rgba(0, 0, 0, 0.35);
+  --shadow-glow: 0 0 24px rgba(212, 175, 55, 0.35);
+  --shadow-card: 0 12px 30px rgba(0, 0, 0, 0.5);
+
+  /* トランジション */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-fast: 160ms;
+  --dur-base: 280ms;
+  --dur-slow: 520ms;
+}

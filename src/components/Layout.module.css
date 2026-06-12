@@ -1,0 +1,109 @@
+.shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-4);
+  background: linear-gradient(180deg, rgba(11, 5, 24, 0.92) 0%, rgba(11, 5, 24, 0.6) 100%);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-serif);
+  font-weight: 600;
+  color: var(--color-gold-soft);
+  text-decoration: none;
+  letter-spacing: 0.05em;
+}
+
+.brandMark {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--color-gold) 0%, var(--color-purple) 80%);
+  color: var(--color-bg-0);
+  font-size: 1.1rem;
+  box-shadow: var(--shadow-glow);
+}
+
+.brandText {
+  font-size: 1.05rem;
+}
+
+.nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.navLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: var(--radius-pill);
+  border: 1px solid transparent;
+  color: var(--color-text-muted);
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: all var(--dur-fast) var(--ease-out);
+}
+
+.navLink:hover {
+  color: var(--color-gold-soft);
+  border-color: var(--color-border);
+  background: var(--color-surface);
+}
+
+.navLink.active {
+  color: var(--color-bg-0);
+  background: linear-gradient(120deg, var(--color-gold-soft), var(--color-gold));
+  border-color: var(--color-gold);
+  box-shadow: 0 4px 12px rgba(212, 175, 55, 0.35);
+}
+
+.navIcon {
+  font-size: 1rem;
+}
+
+.navLabel {
+  font-size: 0.9rem;
+}
+
+@media (min-width: 640px) {
+  .header {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.footer {
+  padding: var(--space-5) var(--space-4) var(--space-6);
+  text-align: center;
+  color: var(--color-text-faint);
+  border-top: 1px solid var(--color-border);
+  background: rgba(11, 5, 24, 0.4);
+}
+
+.path {
+  margin-left: var(--space-2);
+  font-family: var(--font-mono);
+  color: var(--color-text-faint);
+  font-size: 0.75rem;
+}

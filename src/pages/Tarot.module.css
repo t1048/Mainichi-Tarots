@@ -1,0 +1,217 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.hero {
+  text-align: center;
+  padding-top: var(--space-3);
+}
+
+.lede {
+  color: var(--color-text-muted);
+  max-width: 540px;
+  margin: 0 auto;
+}
+
+.todayHint {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  font-size: 0.85rem;
+  color: var(--color-gold-soft);
+}
+
+.linkBtn {
+  background: transparent;
+  border: 0;
+  color: var(--color-gold);
+  cursor: pointer;
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.tabs {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.tab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 10px 18px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font-family: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all var(--dur-fast) var(--ease-out);
+}
+
+.tab:hover {
+  border-color: var(--color-border-strong);
+  color: var(--color-gold-soft);
+}
+
+.tabActive {
+  background: linear-gradient(120deg, var(--color-purple-soft) 0%, var(--color-purple) 100%);
+  color: var(--color-text);
+  border-color: var(--color-purple-soft);
+  box-shadow: 0 6px 18px rgba(107, 63, 160, 0.4);
+}
+
+.tabMark {
+  font-family: var(--font-serif);
+  font-size: 1.1rem;
+  color: var(--color-gold-soft);
+}
+
+.tabActive .tabMark {
+  color: var(--color-gold);
+}
+
+.actionRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  justify-content: center;
+  align-items: center;
+}
+
+.board {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  justify-content: center;
+  padding: var(--space-4);
+  min-height: 320px;
+  border-radius: var(--radius-lg);
+  background: radial-gradient(ellipse at center, rgba(107, 63, 160, 0.15), transparent 70%);
+  border: 1px dashed var(--color-border);
+}
+
+.boardThree {
+  min-height: 360px;
+}
+
+.results {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 720px) {
+  .results {
+    grid-template-columns: 1fr 1fr;
+  }
+  .results > :global(section):last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+}
+
+.historySection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.historyHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.historyActions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.historyList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.historyItem {
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.historyEmpty {
+  color: var(--color-text-faint);
+  text-align: center;
+  padding: var(--space-3);
+}
+
+.historyMeta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.historyBody {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.historyCard {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--color-bg-2);
+  border: 1px solid var(--color-border);
+  font-size: 0.85rem;
+  color: var(--color-gold-soft);
+}
+
+.historyCard small {
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+}
+
+.tag {
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  background: var(--color-purple);
+  color: var(--color-text);
+}
+
+.summary {
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: var(--color-gold-soft);
+}
+
+.historyText {
+  white-space: pre-wrap;
+  margin-top: var(--space-2);
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}

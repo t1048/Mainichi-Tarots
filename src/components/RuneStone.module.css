@@ -1,0 +1,30 @@
+.stone {
+  position: relative;
+  display: inline-block;
+  border-radius: 50%;
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.5));
+  transition: transform var(--dur-base) var(--ease-out);
+}
+
+.stone:hover {
+  transform: scale(1.05) rotate(-2deg);
+}
+
+.svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.glow {
+  animation: pulse 2.4s var(--ease-in-out) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    filter: drop-shadow(0 0 4px rgba(212, 175, 55, 0.3));
+  }
+  50% {
+    filter: drop-shadow(0 0 18px rgba(212, 175, 55, 0.7));
+  }
+}
