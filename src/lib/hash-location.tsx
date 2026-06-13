@@ -116,23 +116,5 @@ export function HashLocationProvider({ children }: { children: ComponentChildren
     };
   }, []);
 
-  // #region agent log
-  useLayoutEffect(() => {
-    fetch('http://127.0.0.1:7597/ingest/bb0821b0-194a-4e1b-920d-56c33de5fac0', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': 'fa4e70' },
-      body: JSON.stringify({
-        sessionId: 'fa4e70',
-        runId: 'post-fix',
-        hypothesisId: 'A',
-        location: 'hash-location.tsx:route-change',
-        message: 'hash route updated',
-        data: { url, path: value.path, hash: window.location.hash },
-        timestamp: Date.now(),
-      }),
-    }).catch(() => {});
-  }, [url]);
-  // #endregion
-
   return h(HASH_LOCATION_CTX.Provider, { value }, children);
 }

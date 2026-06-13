@@ -108,6 +108,10 @@
   background: radial-gradient(circle at 100% 0%, rgba(109, 143, 196, 0.25), transparent 50%);
 }
 
+.violet::before {
+  background: radial-gradient(circle at 100% 0%, rgba(186, 130, 220, 0.28), transparent 50%);
+}
+
 .love::before {
   background: radial-gradient(circle at 100% 0%, rgba(232, 142, 168, 0.3), transparent 50%);
 }

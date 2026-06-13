@@ -1,11 +1,29 @@
-import { useState, useCallback, useRef } from 'preact/hooks';
+import { useState, useCallback, useRef, useMemo } from 'preact/hooks';
 import { Button } from '../components/Button';
+import { CopyResultButton } from '../components/CopyResultButton';
 import { ResultPanel } from '../components/ResultPanel';
 import { drawOmikuji, type OmikujiResult } from '../data/omikuji-meta';
 import { saveHistoryEntry, type OmikujiHistoryDetail, buildOmikujiSummary, newHistoryId } from '../lib/history';
 import styles from './Omikuji.module.css';
 
 type Phase = 'idle' | 'shaking' | 'drop' | 'done';
+
+function formatOmikujiReading(r: OmikujiResult): string {
+  const lines = [
+    '【おみくじ】',
+    '',
+    `■ 今日の運勢: ${r.level.level}`,
+    r.level.summary,
+    '',
+    '■ カテゴリ別',
+  ];
+  for (const c of r.categories) {
+    lines.push(`${c.category.label}: ${c.text}`);
+  }
+  lines.push('');
+  lines.push('— 毎日タロット＆占い');
+  return lines.join('\n');
+}
 
 export function Omikuji() {
   const [phase, setPhase] = useState<Phase>('idle');
@@ -45,6 +63,11 @@ export function Omikuji() {
     }, 1700);
   }, [phase, saveResult]);
 
+  const readingText = useMemo(
+    () => (result && phase === 'done' ? formatOmikujiReading(result) : ''),
+    [result, phase],
+  );
+
   return (
     <article class={styles.page}>
       <header class={styles.hero}>
@@ -72,6 +95,7 @@ export function Omikuji() {
         <Button onClick={start} size="lg" loading={phase === 'shaking'} disabled={phase === 'drop'}>
           {phase === 'idle' || phase === 'done' ? '桶を振る' : phase === 'shaking' ? '振っています…' : 'おみくじが出てきます…'}
         </Button>
+        {result && phase === 'done' && <CopyResultButton text={readingText} />}
       </div>
 
       {result && phase === 'done' && (

@@ -1,6 +1,7 @@
-import { useEffect, useState, useCallback, useRef } from 'preact/hooks';
+import { useEffect, useState, useCallback, useRef, useMemo } from 'preact/hooks';
 import { Button } from '../components/Button';
 import { CardSlot } from '../components/CardSlot';
+import { CopyResultButton } from '../components/CopyResultButton';
 import { ResultPanel } from '../components/ResultPanel';
 import { ALL_CARDS, type TarotCard, type Orientation } from '../data/tarot-meta';
 import { interpret } from '../data/templates';
@@ -66,6 +67,27 @@ function summarize(a: DrawnCard, b: DrawnCard): { commonTheme: string; complemen
   };
 }
 
+function formatLoveTarotReading(drawn: DrawnCard[]): string {
+  const summary = summarize(drawn[0], drawn[1]);
+  const lines = ['【タロット相性占い】', ''];
+  lines.push(`■ 共通テーマ\n${summary.commonTheme}`);
+  lines.push(`■ 補完関係\n${summary.complement}`);
+  lines.push(`■ 緊張点\n${summary.tension}`);
+  lines.push('');
+  for (const d of drawn) {
+    const txt = interpret(d.card, d.orientation, 'today');
+    const orient = d.orientation === 'upright' ? '正位置' : '逆位置';
+    lines.push(`■ ${POSITION_LABELS[d.position]} — ${d.card.nameJp}（${orient}）`);
+    if (txt.keywords.length > 0) {
+      lines.push(`キーワード: ${txt.keywords.join(' / ')}`);
+    }
+    lines.push(txt.body);
+    lines.push('');
+  }
+  lines.push('— 毎日タロット＆占い');
+  return lines.join('\n');
+}
+
 export function LoveTarot() {
   const [phase, setPhase] = useState<Phase>('idle');
   const [drawn, setDrawn] = useState<DrawnCard[]>([]);
@@ -116,6 +138,11 @@ export function LoveTarot() {
     return () => clearTimeout(t);
   }, [phase, drawn]);
 
+  const readingText = useMemo(
+    () => (phase === 'done' && drawn.length === 2 ? formatLoveTarotReading(drawn) : ''),
+    [phase, drawn],
+  );
+
   return (
     <article class={styles.page}>
       <header class={styles.hero}>
@@ -140,9 +167,12 @@ export function LoveTarot() {
               : 'カードを裏返しています…'}
         </Button>
         {phase === 'done' && drawn.length === 2 && (
-          <Button variant="ghost" onClick={() => { setPhase('idle'); setDrawn([]); }}>
-            結果を閉じる
-          </Button>
+          <>
+            <CopyResultButton text={readingText} />
+            <Button variant="ghost" onClick={() => { setPhase('idle'); setDrawn([]); }}>
+              結果を閉じる
+            </Button>
+          </>
         )}
       </div>
 

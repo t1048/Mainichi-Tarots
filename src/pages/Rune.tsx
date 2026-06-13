@@ -1,5 +1,6 @@
-import { useState, useCallback, useRef } from 'preact/hooks';
+import { useState, useCallback, useRef, useMemo } from 'preact/hooks';
 import { Button } from '../components/Button';
+import { CopyResultButton } from '../components/CopyResultButton';
 import { ResultPanel } from '../components/ResultPanel';
 import { RuneStone } from '../components/RuneStone';
 import { RUNES, type RuneResult, type RunePosition, interpretRune, RUNE_POSITION_LABEL } from '../data/rune-meta';
@@ -15,6 +16,21 @@ function drawRune(): RuneResult {
   const rune = RUNES[secureRandomInt(RUNES.length)];
   const orientation = chance(0.5) ? 'upright' : 'reversed';
   return { rune, orientation, position: 'situation' };
+}
+
+function formatRuneReading(picked: RuneResult[]): string {
+  const lines = ['【ルーン占い】', ''];
+  for (const r of picked) {
+    lines.push(`■ ${RUNE_POSITION_LABEL[r.position]} — ${r.rune.nameJp}（${r.rune.nameOrigin}）`);
+    lines.push(`${r.orientation === 'upright' ? '正位置' : '逆位置'}`);
+    if (r.rune.keywords.length > 0) {
+      lines.push(`キーワード: ${r.rune.keywords.join(' / ')}`);
+    }
+    lines.push(interpretRune(r));
+    lines.push('');
+  }
+  lines.push('— 毎日タロット＆占い');
+  return lines.join('\n');
 }
 
 export function Rune() {
@@ -73,6 +89,11 @@ export function Rune() {
     }, 700);
   }, [phase, saveResults]);
 
+  const readingText = useMemo(
+    () => (phase === 'done' && results.length === 3 ? formatRuneReading(results) : ''),
+    [phase, results],
+  );
+
   return (
     <article class={styles.page}>
       <header class={styles.hero}>
@@ -87,6 +108,7 @@ export function Rune() {
         <Button onClick={startReading} size="lg" loading={phase === 'drawing'} disabled={phase === 'revealing'}>
           {phase === 'idle' || phase === 'done' ? '3 つの石を引く' : phase === 'drawing' ? '石を引いています…' : '石をめくっています…'}
         </Button>
+        {phase === 'done' && results.length === 3 && <CopyResultButton text={readingText} />}
       </div>
 
       <div class={styles.stones} aria-live="polite">

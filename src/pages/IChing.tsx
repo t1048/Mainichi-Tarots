@@ -1,5 +1,6 @@
-import { useState, useCallback, useRef } from 'preact/hooks';
+import { useState, useCallback, useRef, useMemo } from 'preact/hooks';
 import { Button } from '../components/Button';
+import { CopyResultButton } from '../components/CopyResultButton';
 import { ResultPanel } from '../components/ResultPanel';
 import { drawHexagram, buildHexagramFrom, type IChingResult, type Line, type CoinThrow } from '../data/iching-meta';
 import { TRIGRAM_MAP } from '../data/iching-meta';
@@ -13,6 +14,28 @@ const LINE_NAME: Record<Line, { label: string; char: string }> = {
   0: { label: '陰', char: '⚋' },
   1: { label: '陽', char: '⚊' },
 };
+
+function formatIChingReading(r: IChingResult): string {
+  const lines = [
+    '【周易(易経)】',
+    '',
+    `■ 本卦: ${r.primary.hex.num}. ${r.primary.hex.nameJp}`,
+    r.primary.hex.theme,
+    r.primary.hex.judgment,
+  ];
+  if (r.changed) {
+    lines.push('');
+    lines.push(`■ 変化した卦: ${r.changed.hex.num}. ${r.changed.hex.nameJp}`);
+    lines.push(r.changed.hex.theme);
+    lines.push(r.changed.hex.judgment);
+    if (r.changedLine !== null) {
+      lines.push(`第${r.changedLine}の線に変化が出ました。`);
+    }
+  }
+  lines.push('');
+  lines.push('— 毎日タロット＆占い');
+  return lines.join('\n');
+}
 
 export function IChing() {
   const [phase, setPhase] = useState<Phase>('idle');
@@ -99,12 +122,17 @@ export function IChing() {
     setPhase('done');
   }, [phase, saveResult]);
 
+  const readingText = useMemo(
+    () => (result && phase === 'done' ? formatIChingReading(result) : ''),
+    [result, phase],
+  );
+
   return (
     <article class={styles.page}>
       <header class={styles.hero}>
         <h1>周易(易経)</h1>
         <p class={styles.lede}>
-          コインを 6 回投げて 1 卦を構成。合計が 6 点なら老陰、9 点なら老陽の「変爻」となり、別の卦へと姿を変えます。
+          コインを 6 回投げて 1 卦を構成。合計が 6 点なら老陰、9 点なら老陽の「変化の線」となり、別の卦へと姿を変えます。
         </p>
       </header>
 
@@ -125,7 +153,7 @@ export function IChing() {
           {throwLog.length === 0 && <p class={styles.muted}>「コインを 6 回投げる」を押すと開始します</p>}
           {throwLog.map((t, i) => (
             <div class={styles.logRow} key={i}>
-              <span class={styles.logIdx}>{6 - i}爻</span>
+              <span class={styles.logIdx}>{6 - i}の線</span>
               <span class={styles.logLine}>
                 {t.line === 1 ? '━━━━' : '━ ━━ ━'}
                 {t.changing && <span class={styles.changing}>{t.line === 1 ? '→━ ━━ ━' : '→━━━━'}</span>}
@@ -140,6 +168,7 @@ export function IChing() {
         <Button onClick={startThrowing} size="lg" loading={phase === 'throwing'}>
           {phase === 'idle' || phase === 'done' ? 'コインを 6 回投げる' : '投げています…'}
         </Button>
+        {result && phase === 'done' && <CopyResultButton text={readingText} />}
       </div>
 
       {result && phase === 'done' && (
@@ -155,16 +184,16 @@ export function IChing() {
 
           {result.changed && (
             <ResultPanel
-              title="之卦(変化した卦)"
-              subtitle={`${result.changed.hex.num}. ${result.changed.hex.nameJp}`}
-              tone="purple"
-            >
-              {result.changed.hex.theme}
-              <p class={styles.judgment}>{result.changed.hex.judgment}</p>
-              <p class={styles.changingNote}>
-                <strong>第{result.changedLine}爻</strong>に変爻が出ました。
-                この爻辞が、現在のあなたへの具体的なメッセージです。
-              </p>
+            title="変化した卦"
+            subtitle={`${result.changed.hex.num}. ${result.changed.hex.nameJp}`}
+            tone="purple"
+          >
+            {result.changed.hex.theme}
+            <p class={styles.judgment}>{result.changed.hex.judgment}</p>
+            <p class={styles.changingNote}>
+              <strong>第{result.changedLine}の線</strong>に変化が出ました。
+              この部分が、現在のあなたへの具体的なメッセージです。
+            </p>
             </ResultPanel>
           )}
 
@@ -181,7 +210,7 @@ export function IChing() {
                 <HexagramView
                   lines={result.changed.lines}
                   changedIndex={null}
-                  label="之卦"
+                  label="変化した卦"
                   hexName={result.changed.hex.nameJp}
                 />
               </>

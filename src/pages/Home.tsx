@@ -1,4 +1,5 @@
 import { Button } from '../components/Button';
+import { DailyTarotDashboard } from '../components/DailyTarotDashboard';
 import { formatDateJP } from '../lib/format';
 import styles from './Home.module.css';
 
@@ -7,7 +8,7 @@ interface NavCard {
   title: string;
   icon: string;
   desc: string;
-  accent: 'gold' | 'purple' | 'rose' | 'indigo' | 'love';
+  accent: 'gold' | 'purple' | 'rose' | 'indigo' | 'love' | 'violet';
   primary?: boolean;
 }
 
@@ -38,14 +39,28 @@ const NAV_CARDS: NavCard[] = [
     href: '/iching',
     title: '周易(易経)',
     icon: '☯',
-    desc: '64 卦から 1 卦 + 変爻を引く。6 回のコイン投げを再現。',
+    desc: '64 卦から 1 卦 + 変化の線を引く。6 回のコイン投げを再現。',
     accent: 'indigo',
   },
   {
-    href: '/love',
-    title: '恋愛・相性占い',
+    href: '/numerology',
+    title: '数秘術（ヌメロジー）',
+    icon: '✵',
+    desc: '生年月日からライフパスナンバーと今年のサイクルナンバーを読み解く。',
+    accent: 'violet',
+  },
+  {
+    href: '/love/tarot',
+    title: 'タロット相性占い',
     icon: '♥',
-    desc: '2 人の関係をタロットと周易で読む。あなたと相手の組み合わせを占う。',
+    desc: '78 枚のフルデッキから 2 枚を引き、あなたと相手の関係性を読み解きます。',
+    accent: 'love',
+  },
+  {
+    href: '/love/iching',
+    title: '二人の周易',
+    icon: '☯',
+    desc: '2 人で 6 投 × 2 = 12 投。互いの卦を組み合わせて、関係の二面性を見ます。',
     accent: 'love',
   },
 ];
@@ -72,6 +87,8 @@ export function Home() {
         </p>
       </section>
 
+      <DailyTarotDashboard />
+
       <section class={styles.grid} aria-label="占いメニュー">
         {NAV_CARDS.map((card) => (
           <a
@@ -92,13 +109,13 @@ export function Home() {
       <section class={styles.note}>
         <h3>このサイトについて</h3>
         <p>
-          すべての絵柄は SVG で動的生成しています。外部画像やフォントを読み込まないので、電波が弱い場所でもサクサク。
-          結果は <code class="kbd">localStorage</code> に保存され、リロードしても履歴が残ります。
+          朝の気分付けにも、夜の一人時間にも——タロット・ルーン・おみくじ・周易・数秘術を、ブラウザひとつで。
+          会員登録は不要。ページを開いて、今日のひと引きから始められます。
         </p>
         <ul>
-          <li>ダーク × 金 × 紫の神秘的な配色</li>
-          <li>アニメーションは <code class="kbd">prefers-reduced-motion</code> 設定で自動 OFF</li>
-          <li>モバイル幅 (375px) までレスポンシブ対応</li>
+          <li>ホームから今日のタロットをその場で引ける</li>
+          <li>引いた結果は履歴からあとで見返せる</li>
+          <li>恋愛・相性向けの占いも同じ画面から</li>
         </ul>
       </section>
     </article>

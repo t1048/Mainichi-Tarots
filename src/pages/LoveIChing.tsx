@@ -1,5 +1,6 @@
-import { useState, useCallback, useRef } from 'preact/hooks';
+import { useState, useCallback, useRef, useMemo } from 'preact/hooks';
 import { Button } from '../components/Button';
+import { CopyResultButton } from '../components/CopyResultButton';
 import { ResultPanel } from '../components/ResultPanel';
 import {
   buildHexagramFrom,
@@ -64,6 +65,34 @@ function combineHexagrams(
     changing: false,
   }));
   return buildHexagramFrom(throws);
+}
+
+function formatLoveIChingReading(
+  yourBuilt: HexagramBuilt,
+  partnerBuilt: HexagramBuilt,
+  aCombined: HexagramBuilt,
+  bCombined: HexagramBuilt,
+): string {
+  const lines = [
+    '【二人の周易】',
+    '',
+    `■ あなたの卦: ${yourBuilt.hex.num}. ${yourBuilt.hex.nameJp}`,
+    yourBuilt.hex.theme,
+    yourBuilt.hex.judgment,
+    '',
+    `■ 相手の卦: ${partnerBuilt.hex.num}. ${partnerBuilt.hex.nameJp}`,
+    partnerBuilt.hex.theme,
+    partnerBuilt.hex.judgment,
+    '',
+    `■ 組み合わせ卦 A（あなた下卦 / 相手上卦）: ${aCombined.hex.num}. ${aCombined.hex.nameJp}`,
+    aCombined.hex.theme,
+    '',
+    `■ 組み合わせ卦 B（相手下卦 / あなた上卦）: ${bCombined.hex.num}. ${bCombined.hex.nameJp}`,
+    bCombined.hex.theme,
+    '',
+    '— 毎日タロット＆占い',
+  ];
+  return lines.join('\n');
 }
 
 export function LoveIChing() {
@@ -181,12 +210,17 @@ export function LoveIChing() {
   const aCombined = yourBuilt && partnerBuilt ? combineHexagrams(yourBuilt, partnerBuilt, 'A') : null;
   const bCombined = yourBuilt && partnerBuilt ? combineHexagrams(yourBuilt, partnerBuilt, 'B') : null;
 
+  const readingText = useMemo(() => {
+    if (!isComplete || !yourBuilt || !partnerBuilt || !aCombined || !bCombined) return '';
+    return formatLoveIChingReading(yourBuilt, partnerBuilt, aCombined, bCombined);
+  }, [isComplete, yourBuilt, partnerBuilt, aCombined, bCombined]);
+
   return (
     <article class={styles.page}>
       <header class={styles.hero}>
         <h1>二人の周易</h1>
         <p class={styles.lede}>
-          2 人で 6 投 × 2 = 12 投。あなたの本卦と相手の本卦が出たら、
+          2 人で 6 投 × 2 = 12 投。あなたの卦と相手の卦が出たら、
           上下卦を入れ替えて 2 つの組み合わせ卦を生成します。
         </p>
       </header>
@@ -225,7 +259,7 @@ export function LoveIChing() {
             )}
             {throwLog.map((t, i) => (
               <div class={styles.logRow} key={i}>
-                <span class={styles.logIdx}>{6 - i}爻</span>
+                <span class={styles.logIdx}>{6 - i}の線</span>
                 <span class={styles.logLine}>
                   {t.line === 1 ? '━━━━' : '━ ━━ ━'}
                 </span>
@@ -248,26 +282,27 @@ export function LoveIChing() {
           {phase === 'throwing-partner' && '投げています…'}
           {phase === 'done' && 'もう一度'}
         </Button>
+        {isComplete && <CopyResultButton text={readingText} />}
       </div>
 
       {isComplete && yourBuilt && partnerBuilt && aCombined && bCombined && (
         <section class={styles.results}>
           <div class={styles.duoSummary}>
             <div class={`${styles.hexagramCard} ${styles.you}`}>
-              <h3>あなたの本卦</h3>
+              <h3>あなたの卦</h3>
               <span class={styles.hexName}>{yourBuilt.hex.num}. {yourBuilt.hex.nameJp}</span>
               <p class={styles.hexTheme}>{yourBuilt.hex.theme}</p>
               <p class={styles.judgment}>{yourBuilt.hex.judgment}</p>
             </div>
             <div class={`${styles.hexagramCard} ${styles.partner}`}>
-              <h3>相手の本卦</h3>
+              <h3>相手の卦</h3>
               <span class={styles.hexName}>{partnerBuilt.hex.num}. {partnerBuilt.hex.nameJp}</span>
               <p class={styles.hexTheme}>{partnerBuilt.hex.theme}</p>
               <p class={styles.judgment}>{partnerBuilt.hex.judgment}</p>
             </div>
           </div>
 
-          <div class={styles.arrowRow}>あなたの本卦と相手の本卦から、組み合わせ卦を生成</div>
+          <div class={styles.arrowRow}>あなたの卦と相手の卦から、組み合わせ卦を生成</div>
 
           <div class={styles.hexagrams}>
             <HexBlock hex={aCombined} label="あなたから見た二人" />

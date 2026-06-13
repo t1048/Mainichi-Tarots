@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useMemo } from 'preact/hooks';
 import { Button } from '../components/Button';
 import { CardSlot } from '../components/CardSlot';
+import { CopyResultButton } from '../components/CopyResultButton';
 import { ResultPanel } from '../components/ResultPanel';
 import { ALL_CARDS } from '../data/tarot-meta';
 import type { TarotCard, Orientation, Position } from '../data/tarot-meta';
@@ -39,22 +40,28 @@ function newReadingId(): string {
   return `${Date.now().toString(36)}-${Math.floor(Math.random() * 1e6).toString(36)}`;
 }
 
+function formatTarotReading(mode: Mode, cards: DrawnCard[]): string {
+  const header = mode === 'one' ? '1 枚引き' : '3 枚スプレッド';
+  const lines = ['【タロット占い】', header, ''];
+  for (const d of cards) {
+    const pos = d.position ?? 'today';
+    const txt = interpret(d.card, d.orientation, pos);
+    const orient = d.orientation === 'upright' ? '正位置' : '逆位置';
+    lines.push(`■ ${POSITION_LABELS[pos]} — ${d.card.nameJp}（${orient}）`);
+    if (txt.keywords.length > 0) {
+      lines.push(`キーワード: ${txt.keywords.join(' / ')}`);
+    }
+    lines.push(txt.body);
+    lines.push('');
+  }
+  lines.push('— 毎日タロット＆占い');
+  return lines.join('\n');
+}
+
 export function Tarot() {
   const [mode, setMode] = useState<Mode>('one');
   const [phase, setPhase] = useState<Phase>('idle');
   const [drawn, setDrawn] = useState<DrawnCard[]>([]);
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.has('r')) {
-      const decoded = tryDecodePreset(params.get('r') ?? '');
-      if (decoded) {
-        setMode(decoded.mode);
-        setDrawn(decoded.drawn);
-        setPhase('done');
-      }
-    }
-  }, []);
 
   useEffect(() => {
     if (phase === 'shuffling') {
@@ -138,6 +145,11 @@ export function Tarot() {
     setPhase('idle');
   };
 
+  const readingText = useMemo(
+    () => (phase === 'done' && drawn.length > 0 ? formatTarotReading(mode, drawn) : ''),
+    [phase, drawn, mode],
+  );
+
   return (
     <article class={styles.page}>
       <header class={styles.hero}>
@@ -180,9 +192,12 @@ export function Tarot() {
             : phase === 'shuffling' ? 'シャッフル中…' : 'カードを裏返しています…'}
         </Button>
         {phase === 'done' && drawn.length > 0 && (
-          <Button variant="ghost" onClick={() => { setPhase('idle'); setDrawn([]); }}>
-            結果を閉じる
-          </Button>
+          <>
+            <CopyResultButton text={readingText} />
+            <Button variant="ghost" onClick={() => { setPhase('idle'); setDrawn([]); }}>
+              結果を閉じる
+            </Button>
+          </>
         )}
       </div>
 
@@ -223,24 +238,4 @@ export function Tarot() {
       )}
     </article>
   );
-}
-
-function tryDecodePreset(raw: string): { mode: Mode; drawn: DrawnCard[] } | null {
-  try {
-    const decoded = JSON.parse(atob(raw)) as {
-      mode: Mode;
-      ids: Array<[string, Orientation, Position]>;
-    };
-    if (decoded.mode !== 'one' && decoded.mode !== 'three') return null;
-    const drawn: DrawnCard[] = [];
-    for (const [id, o, p] of decoded.ids) {
-      const c = ALL_CARDS.find((x) => x.id === id);
-      if (!c) return null;
-      drawn.push({ card: c, orientation: o, position: p });
-    }
-    if (drawn.length === 0) return null;
-    return { mode: decoded.mode, drawn };
-  } catch {
-    return null;
-  }
 }

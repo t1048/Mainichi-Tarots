@@ -162,6 +162,11 @@
   color: var(--color-bg-0);
 }
 
+.badge.numerology {
+  background: linear-gradient(120deg, rgba(186, 130, 220, 0.9), var(--color-purple));
+  color: var(--color-text);
+}
+
 .summary {
   font-weight: 600;
   color: var(--color-gold-soft);

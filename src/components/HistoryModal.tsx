@@ -11,6 +11,7 @@ const FILTER_KINDS: { value: 'all' | FortuneKind; label: string }[] = [
   { value: 'rune', label: 'ルーン' },
   { value: 'omikuji', label: 'おみくじ' },
   { value: 'iching', label: '周易' },
+  { value: 'numerology', label: '数秘術' },
   { value: 'love-tarot', label: '恋愛タロット' },
   { value: 'love-iching', label: '二人の周易' },
 ];
@@ -20,6 +21,7 @@ const KIND_LABELS: Record<FortuneKind, string> = {
   rune: 'ルーン',
   omikuji: 'おみくじ',
   iching: '周易',
+  numerology: '数秘術',
   'love-tarot': '恋愛タロット',
   'love-iching': '二人の周易',
 };
@@ -168,10 +170,10 @@ function HistoryDetail({ entry }: { entry: BaseHistoryEntry }) {
         <div class={styles.detailBody}>
           <div class={styles.detailLine}><strong>本卦:</strong> {entry.detail.primaryNum}. {entry.detail.primaryName}</div>
           {entry.detail.changedNum !== null && (
-            <div class={styles.detailLine}><strong>之卦:</strong> {entry.detail.changedNum}. {entry.detail.changedName}</div>
+            <div class={styles.detailLine}><strong>変化した卦:</strong> {entry.detail.changedNum}. {entry.detail.changedName}</div>
           )}
           {entry.detail.changedLine !== null && (
-            <div class={styles.detailLine}><strong>変爻:</strong> 第{entry.detail.changedLine}爻</div>
+            <div class={styles.detailLine}><strong>変化の線:</strong> 第{entry.detail.changedLine}の線</div>
           )}
           <div class={styles.detailLine}>{entry.detail.judgment}</div>
         </div>
@@ -199,6 +201,21 @@ function HistoryDetail({ entry }: { entry: BaseHistoryEntry }) {
           <div class={styles.detailLine}><strong>組み合わせ B:</strong> {entry.detail.bHexNum}. {entry.detail.bHexName}</div>
           <div class={styles.detailLine}><strong>A 卦辞:</strong> {entry.detail.aJudgment}</div>
           <div class={styles.detailLine}><strong>B 卦辞:</strong> {entry.detail.bJudgment}</div>
+        </div>
+      );
+    case 'numerology':
+      return (
+        <div class={styles.detailBody}>
+          <div class={styles.detailLine}>
+            <strong>生年月日:</strong> {entry.detail.birthYear}年{entry.detail.birthMonth}月{entry.detail.birthDay}日
+          </div>
+          <div class={styles.detailLine}>
+            <strong>ライフパス:</strong> {entry.detail.lifePath}（{entry.detail.lifePathTitle}）
+          </div>
+          <div class={styles.detailLine}>
+            <strong>{entry.detail.cycleYear}年サイクル:</strong> {entry.detail.personalYear}（{entry.detail.personalYearTitle}）
+          </div>
+          <div class={styles.detailLine}>{entry.detail.summaryText}</div>
         </div>
       );
   }

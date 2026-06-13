@@ -60,7 +60,6 @@ There is no `lint`, no `test`, no single-test command. Do not fabricate one.
 - **All randomness is secure.** `src/lib/rng.ts` uses `crypto.getRandomValues` with rejection sampling; do not substitute `Math.random()` in pages. `chance(0.5)` is how orientation (正/逆) is rolled.
 - **No image assets.** Cards, runes, and hexagrams are all inline SVG. Do not add raster images to `public/`.
 - **Reduced motion.** The site must continue to function when `prefers-reduced-motion: reduce` is set; CSS in `src/styles/` already handles the disabling, but don't introduce new animations without honoring it.
-- **Tarot preset URLs.** Only `src/pages/Tarot.tsx` reads `?r=<base64>` query params to restore a shared reading via `tryDecodePreset`. The love pages do not have a sharing contract. Keep the existing one or break it explicitly.
 - **TS strictness.** Unused locals / parameters fail typecheck. Clean up dead code rather than `_`-prefixing without thought.
 - **Japanese UI strings.** User-facing copy is Japanese; keep new copy in Japanese to match the existing voice.
 
