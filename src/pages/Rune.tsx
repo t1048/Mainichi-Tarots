@@ -1,9 +1,10 @@
-import { useState, useCallback } from 'preact/hooks';
+import { useState, useCallback, useRef } from 'preact/hooks';
 import { Button } from '../components/Button';
 import { ResultPanel } from '../components/ResultPanel';
 import { RuneStone } from '../components/RuneStone';
 import { RUNES, type RuneResult, type RunePosition, interpretRune, RUNE_POSITION_LABEL } from '../data/rune-meta';
 import { secureRandomInt, chance } from '../lib/rng';
+import { saveHistoryEntry, type RuneHistoryDetail, buildRuneSummary, newHistoryId } from '../lib/history';
 import styles from './Rune.module.css';
 
 type Phase = 'idle' | 'drawing' | 'revealing' | 'done';
@@ -20,9 +21,31 @@ export function Rune() {
   const [phase, setPhase] = useState<Phase>('idle');
   const [results, setResults] = useState<RuneResult[]>([]);
   const [revealIndex, setRevealIndex] = useState(0);
+  const savedRef = useRef(false);
+
+  const saveResults = useCallback((picked: RuneResult[]) => {
+    if (savedRef.current) return;
+    savedRef.current = true;
+    const interpretation = picked
+      .map((r) => `[${RUNE_POSITION_LABEL[r.position]}] ${interpretRune(r)}`)
+      .join('\n\n');
+    const detail: RuneHistoryDetail = {
+      kind: 'rune',
+      results: picked,
+      interpretation,
+    };
+    saveHistoryEntry({
+      id: newHistoryId(),
+      kind: 'rune',
+      date: new Date().toISOString(),
+      summary: buildRuneSummary(picked),
+      detail,
+    });
+  }, []);
 
   const startReading = useCallback(() => {
     if (phase === 'drawing' || phase === 'revealing') return;
+    savedRef.current = false;
     setResults([]);
     setRevealIndex(0);
     setPhase('drawing');
@@ -43,11 +66,12 @@ export function Rune() {
           setTimeout(tick, 600);
         } else {
           setPhase('done');
+          saveResults(picked);
         }
       };
       setTimeout(tick, 400);
     }, 700);
-  }, [phase]);
+  }, [phase, saveResults]);
 
   return (
     <article class={styles.page}>

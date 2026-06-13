@@ -6,8 +6,7 @@ import { ALL_CARDS } from '../data/tarot-meta';
 import type { TarotCard, Orientation, Position } from '../data/tarot-meta';
 import { interpret } from '../data/templates';
 import { secureRandomInt, chance, shuffle } from '../lib/rng';
-import { loadJSON, saveJSON, dateKey } from '../lib/storage';
-import { formatDateJP, formatTimeJP } from '../lib/format';
+import { saveHistoryEntry, type TarotHistoryDetail, buildTarotSummary } from '../lib/history';
 import styles from './Tarot.module.css';
 
 type Mode = 'one' | 'three';
@@ -18,16 +17,6 @@ interface DrawnCard {
   orientation: Orientation;
   position?: Position;
 }
-
-interface HistoryEntry {
-  id: string;
-  date: string;
-  mode: Mode;
-  drawn: DrawnCard[];
-  interpretation: string;
-}
-
-const HISTORY_KEY = 'tarot-history';
 
 const POSITION_LABELS: Record<NonNullable<Position>, string> = {
   past: '過去',
@@ -54,8 +43,6 @@ export function Tarot() {
   const [mode, setMode] = useState<Mode>('one');
   const [phase, setPhase] = useState<Phase>('idle');
   const [drawn, setDrawn] = useState<DrawnCard[]>([]);
-  const [history, setHistory] = useState<HistoryEntry[]>(() => loadJSON<HistoryEntry[]>(HISTORY_KEY, []));
-  const [showHistory, setShowHistory] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -87,22 +74,24 @@ export function Tarot() {
   const saveCurrent = useCallback(
     (cards: DrawnCard[], m: Mode) => {
       if (cards.length === 0) return;
-      const entry: HistoryEntry = {
-        id: newReadingId(),
-        date: new Date().toISOString(),
+      const interpretation = cards
+        .map((c) => {
+          const txt = interpret(c.card, c.orientation, c.position ?? 'today');
+          return `[${c.position ? POSITION_LABELS[c.position] : '今日'}] ${c.card.nameJp} — ${txt.body}`;
+        })
+        .join('\n\n');
+      const detail: TarotHistoryDetail = {
+        kind: 'tarot',
         mode: m,
-        drawn: cards,
-        interpretation: cards
-          .map((c) => {
-            const txt = interpret(c.card, c.orientation, c.position ?? 'today');
-            return `[${c.position ? POSITION_LABELS[c.position] : '今日'}] ${c.card.nameJp} — ${txt.body}`;
-          })
-          .join('\n\n'),
+        drawn: cards.map((c) => ({ card: c.card, orientation: c.orientation, position: c.position ?? 'today' })),
+        interpretation,
       };
-      setHistory((prev) => {
-        const next = [entry, ...prev].slice(0, 30);
-        saveJSON(HISTORY_KEY, next);
-        return next;
+      saveHistoryEntry({
+        id: newReadingId(),
+        kind: 'tarot',
+        date: new Date().toISOString(),
+        summary: buildTarotSummary(cards.map((c) => ({ card: c.card, orientation: c.orientation, position: c.position ?? 'today' }))),
+        detail,
       });
     },
     [],
@@ -110,7 +99,6 @@ export function Tarot() {
 
   const startReading = useCallback(() => {
     if (phase !== 'idle' && phase !== 'done') return;
-    setShowHistory(false);
     setDrawn([]);
     setPhase('shuffling');
     const cards: DrawnCard[] = [];
@@ -126,7 +114,6 @@ export function Tarot() {
         });
       }
     }
-    // small delay so the user sees the shuffle animation before reveal
     setTimeout(() => setDrawn(cards), 350);
   }, [mode, phase]);
 
@@ -144,18 +131,11 @@ export function Tarot() {
     }, {});
   }, [phase, drawn]);
 
-  const todays = history.find((h) => h.date.startsWith(dateKey()));
-
   const handleModeSwitch = (next: Mode) => {
     if (next === mode) return;
     setMode(next);
     setDrawn([]);
     setPhase('idle');
-  };
-
-  const handleClearHistory = () => {
-    setHistory([]);
-    saveJSON(HISTORY_KEY, []);
   };
 
   return (
@@ -165,14 +145,6 @@ export function Tarot() {
         <p class={styles.lede}>
           78 枚のフルデッキ(大アルカナ 22 + 小アルカナ 56)。直感を信じて、カードを引いてみましょう。
         </p>
-        {todays && !showHistory && (
-          <div class={styles.todayHint}>
-            <span>本日の結果はもう記録されています</span>
-            <button class={styles.linkBtn} onClick={() => setShowHistory(true)}>
-              履歴を見る
-            </button>
-          </div>
-        )}
       </header>
 
       <div class={styles.tabs} role="tablist">
@@ -249,53 +221,6 @@ export function Tarot() {
           })}
         </section>
       )}
-
-      <section class={styles.historySection}>
-        <div class={styles.historyHead}>
-          <h2>履歴</h2>
-          <div class={styles.historyActions}>
-            <Button variant="ghost" size="sm" onClick={() => setShowHistory((v) => !v)}>
-              {showHistory ? '閉じる' : '履歴を見る'}
-            </Button>
-            {history.length > 0 && (
-              <Button variant="ghost" size="sm" onClick={handleClearHistory}>
-                全削除
-              </Button>
-            )}
-          </div>
-        </div>
-        {showHistory && (
-          <ul class={styles.historyList}>
-            {history.length === 0 && (
-              <li class={styles.historyEmpty}>まだ履歴がありません。</li>
-            )}
-            {history.map((h) => {
-              const d = new Date(h.date);
-              return (
-                <li key={h.id} class={styles.historyItem}>
-                  <div class={styles.historyMeta}>
-                    <span>{formatDateJP(d)}</span>
-                    <span class={styles.faint}>{formatTimeJP(d)}</span>
-                    <span class={styles.tag}>{h.mode === 'one' ? '1枚' : '3枚'}</span>
-                  </div>
-                  <div class={styles.historyBody}>
-                    {h.drawn.map((c) => (
-                      <span key={c.card.id + c.position} class={styles.historyCard}>
-                        <strong>{c.card.nameJp}</strong>
-                        <small>{c.orientation === 'upright' ? '正' : '逆'}</small>
-                      </span>
-                    ))}
-                  </div>
-                  <details>
-                    <summary class={styles.summary}>解釈を開く</summary>
-                    <p class={styles.historyText}>{h.interpretation}</p>
-                  </details>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </section>
     </article>
   );
 }

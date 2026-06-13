@@ -1,7 +1,8 @@
-import { useState, useCallback } from 'preact/hooks';
+import { useState, useCallback, useRef } from 'preact/hooks';
 import { Button } from '../components/Button';
 import { ResultPanel } from '../components/ResultPanel';
 import { drawOmikuji, type OmikujiResult } from '../data/omikuji-meta';
+import { saveHistoryEntry, type OmikujiHistoryDetail, buildOmikujiSummary, newHistoryId } from '../lib/history';
 import styles from './Omikuji.module.css';
 
 type Phase = 'idle' | 'shaking' | 'drop' | 'done';
@@ -9,24 +10,47 @@ type Phase = 'idle' | 'shaking' | 'drop' | 'done';
 export function Omikuji() {
   const [phase, setPhase] = useState<Phase>('idle');
   const [result, setResult] = useState<OmikujiResult | null>(null);
+  const savedRef = useRef(false);
+
+  const saveResult = useCallback((r: OmikujiResult) => {
+    if (savedRef.current) return;
+    savedRef.current = true;
+    const detail: OmikujiHistoryDetail = {
+      kind: 'omikuji',
+      level: r.level.level,
+      color: r.level.color,
+      summary: r.level.summary,
+      categories: r.categories.map((c) => ({ label: c.category.label, text: c.text })),
+    };
+    saveHistoryEntry({
+      id: newHistoryId(),
+      kind: 'omikuji',
+      date: new Date().toISOString(),
+      summary: buildOmikujiSummary(r.level.level),
+      detail,
+    });
+  }, []);
 
   const start = useCallback(() => {
     if (phase === 'shaking' || phase === 'drop') return;
+    savedRef.current = false;
     setResult(null);
     setPhase('shaking');
     setTimeout(() => setPhase('drop'), 900);
     setTimeout(() => {
-      setResult(drawOmikuji());
+      const r = drawOmikuji();
+      setResult(r);
+      saveResult(r);
       setPhase('done');
     }, 1700);
-  }, [phase]);
+  }, [phase, saveResult]);
 
   return (
     <article class={styles.page}>
       <header class={styles.hero}>
         <h1>おみくじ</h1>
         <p class={styles.lede}>おみくじを振って、今日の運勢と願い事・健康など 11 カテゴリの運勢を引きましょう。</p>
-   
+    
       </header>
 
       <div class={styles.stage} aria-live="polite">

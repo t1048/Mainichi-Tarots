@@ -1,9 +1,10 @@
-import { useState, useCallback } from 'preact/hooks';
+import { useState, useCallback, useRef } from 'preact/hooks';
 import { Button } from '../components/Button';
 import { ResultPanel } from '../components/ResultPanel';
 import { drawHexagram, buildHexagramFrom, type IChingResult, type Line, type CoinThrow } from '../data/iching-meta';
 import { TRIGRAM_MAP } from '../data/iching-meta';
 import { secureRandomInt } from '../lib/rng';
+import { saveHistoryEntry, type IChingHistoryDetail, buildIChingSummary, newHistoryId } from '../lib/history';
 import styles from './IChing.module.css';
 
 type Phase = 'idle' | 'throwing' | 'thrown' | 'done';
@@ -18,9 +19,32 @@ export function IChing() {
   const [coinStates, setCoinStates] = useState<Array<'h' | 't' | null>>([null, null, null]);
   const [result, setResult] = useState<IChingResult | null>(null);
   const [throwLog, setThrowLog] = useState<CoinThrow[]>([]);
+  const savedRef = useRef(false);
+
+  const saveResult = useCallback((r: IChingResult) => {
+    if (savedRef.current) return;
+    savedRef.current = true;
+    const detail: IChingHistoryDetail = {
+      kind: 'iching',
+      primaryNum: r.primary.hex.num,
+      primaryName: r.primary.hex.nameJp,
+      changedNum: r.changed?.hex.num ?? null,
+      changedName: r.changed?.hex.nameJp ?? null,
+      changedLine: r.changedLine,
+      judgment: r.primary.hex.judgment,
+    };
+    saveHistoryEntry({
+      id: newHistoryId(),
+      kind: 'iching',
+      date: new Date().toISOString(),
+      summary: buildIChingSummary(r.primary.hex.nameJp, r.changed?.hex.nameJp ?? null),
+      detail,
+    });
+  }, []);
 
   const startThrowing = useCallback(async () => {
     if (phase === 'throwing' || phase === 'thrown') return;
+    savedRef.current = false;
     setResult(null);
     setThrowLog([]);
     setPhase('throwing');
@@ -64,14 +88,16 @@ export function IChing() {
     const r = drawHexagram();
     const primaryBuilt = buildHexagramFrom(r.primary);
     const changedBuilt = r.changedLine !== null ? buildHexagramFrom(r.changed) : null;
-    setResult({
+    const builtResult: IChingResult = {
       primary: primaryBuilt,
       changed: changedBuilt,
       changedLine: r.changedLine,
       throws: r.primary,
-    });
+    };
+    setResult(builtResult);
+    saveResult(builtResult);
     setPhase('done');
-  }, [phase]);
+  }, [phase, saveResult]);
 
   return (
     <article class={styles.page}>
@@ -202,7 +228,6 @@ function HexagramView({
       <span class={styles.hexName}>{hexName}</span>
       <div class={styles.hexLines}>
         {[...lines].reverse().map((l, displayIdx) => {
-          // displayIdx 0 = top line (line 6), displayIdx 5 = bottom line (line 1)
           const realLine = 6 - displayIdx;
           const isChanging = changedIndex === realLine;
           return (

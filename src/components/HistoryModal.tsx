@@ -1,0 +1,176 @@
+import { useEffect, useRef, useState } from 'preact/hooks';
+import { Button } from './Button';
+import { formatDateJP, formatTimeJP } from '../lib/format';
+import { clearHistory, loadAllHistory, type BaseHistoryEntry, type FortuneKind } from '../lib/history';
+import { RUNE_POSITION_LABEL } from '../data/rune-meta';
+import styles from './HistoryModal.module.css';
+
+const FILTER_KINDS: { value: 'all' | FortuneKind; label: string }[] = [
+  { value: 'all', label: 'すべて' },
+  { value: 'tarot', label: 'タロット' },
+  { value: 'rune', label: 'ルーン' },
+  { value: 'omikuji', label: 'おみくじ' },
+  { value: 'iching', label: '周易' },
+];
+
+const KIND_LABELS: Record<FortuneKind, string> = {
+  tarot: 'タロット',
+  rune: 'ルーン',
+  omikuji: 'おみくじ',
+  iching: '周易',
+};
+
+const TAROT_POSITION_LABELS: Record<string, string> = {
+  past: '過去',
+  present: '現在',
+  future: '未来',
+  today: '今日',
+};
+
+interface Props {
+  onClose: () => void;
+}
+
+export function HistoryModal({ onClose }: Props) {
+  const [entries, setEntries] = useState(() => loadAllHistory());
+  const [filter, setFilter] = useState<'all' | FortuneKind>('all');
+  const closeRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    closeRef.current?.focus();
+    const original = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = original;
+    };
+  }, []);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
+  const filtered = filter === 'all' ? entries : entries.filter((e) => e.kind === filter);
+
+  const handleClear = () => {
+    if (!confirm('すべての履歴を削除します。よろしいですか？')) return;
+    clearHistory('all');
+    setEntries([]);
+  };
+
+  return (
+    <div class={styles.overlay} onClick={onClose} role="presentation">
+      <div
+        class={styles.modal}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="history-title"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <header class={styles.header}>
+          <h2 id="history-title" class={styles.title}>履歴</h2>
+          <button ref={closeRef} class={styles.closeBtn} onClick={onClose} aria-label="閉じる">×</button>
+        </header>
+
+        <div class={styles.tabs} role="tablist">
+          {FILTER_KINDS.map((f) => {
+            const active = filter === f.value;
+            return (
+              <button
+                key={f.value}
+                role="tab"
+                aria-selected={active}
+                class={`${styles.tab} ${active ? styles.tabActive : ''}`}
+                onClick={() => setFilter(f.value)}
+              >
+                {f.label}
+              </button>
+            );
+          })}
+        </div>
+
+        <div class={styles.body}>
+          {filtered.length === 0 ? (
+            <p class={styles.empty}>まだ履歴がありません。</p>
+          ) : (
+            <ul class={styles.list}>
+              {filtered.map((entry) => (
+                <li key={entry.id} class={styles.item}>
+                  <div class={styles.itemHead}>
+                    <span class={styles.date}>{formatDateJP(new Date(entry.date))} {formatTimeJP(new Date(entry.date))}</span>
+                    <span class={`${styles.badge} ${styles[entry.kind]}`}>{KIND_LABELS[entry.kind]}</span>
+                  </div>
+                  <div class={styles.summary}>{entry.summary}</div>
+                  <details class={styles.details}>
+                    <summary>解釈を開く</summary>
+                    <HistoryDetail entry={entry} />
+                  </details>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        <footer class={styles.footer}>
+          <Button variant="ghost" size="sm" onClick={handleClear}>全削除</Button>
+          <Button onClick={onClose}>閉じる</Button>
+        </footer>
+      </div>
+    </div>
+  );
+}
+
+function HistoryDetail({ entry }: { entry: BaseHistoryEntry }) {
+  switch (entry.detail.kind) {
+    case 'tarot':
+      return (
+        <div class={styles.detailBody}>
+          {entry.detail.drawn.map((d, i) => (
+            <div key={`${d.card.id}-${i}`} class={styles.detailLine}>
+              <strong>{TAROT_POSITION_LABELS[d.position] ?? '今日'}:</strong> {d.card.nameJp} · {d.orientation === 'upright' ? '正位置' : '逆位置'}
+            </div>
+          ))}
+          <pre class={styles.detailText}>{entry.detail.interpretation}</pre>
+        </div>
+      );
+    case 'rune':
+      return (
+        <div class={styles.detailBody}>
+          {entry.detail.results.map((r, i) => (
+            <div key={`${r.rune.id}-${i}`} class={styles.detailLine}>
+              <strong>{RUNE_POSITION_LABEL[r.position]}:</strong> {r.rune.nameJp} · {r.orientation === 'upright' ? '正位置' : '逆位置'}
+            </div>
+          ))}
+          <pre class={styles.detailText}>{entry.detail.interpretation}</pre>
+        </div>
+      );
+    case 'omikuji':
+      return (
+        <div class={styles.detailBody}>
+          <div class={styles.detailLine}><strong>{entry.detail.level}</strong></div>
+          <div class={styles.detailLine}>{entry.detail.summary}</div>
+          {entry.detail.categories.map((c) => (
+            <div key={c.label} class={styles.detailLine}>
+              <strong>{c.label}:</strong> {c.text}
+            </div>
+          ))}
+        </div>
+      );
+    case 'iching':
+      return (
+        <div class={styles.detailBody}>
+          <div class={styles.detailLine}><strong>本卦:</strong> {entry.detail.primaryNum}. {entry.detail.primaryName}</div>
+          {entry.detail.changedNum !== null && (
+            <div class={styles.detailLine}><strong>之卦:</strong> {entry.detail.changedNum}. {entry.detail.changedName}</div>
+          )}
+          {entry.detail.changedLine !== null && (
+            <div class={styles.detailLine}><strong>変爻:</strong> 第{entry.detail.changedLine}爻</div>
+          )}
+          <div class={styles.detailLine}>{entry.detail.judgment}</div>
+        </div>
+      );
+  }
+}

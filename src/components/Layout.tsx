@@ -1,5 +1,7 @@
 import type { ComponentChildren } from 'preact';
 import { useLocation } from 'preact-iso';
+import { useRef, useState } from 'preact/hooks';
+import { HistoryModal } from './HistoryModal';
 import styles from './Layout.module.css';
 
 interface NavItem {
@@ -19,6 +21,13 @@ const NAV: NavItem[] = [
 export function Layout({ children }: { children: ComponentChildren }) {
   const { path } = useLocation();
   const hash = `#${path || '/'}`;
+  const [showHistory, setShowHistory] = useState(false);
+  const historyBtnRef = useRef<HTMLButtonElement>(null);
+
+  const handleClose = () => {
+    setShowHistory(false);
+    historyBtnRef.current?.focus();
+  };
 
   return (
     <div class={styles.shell}>
@@ -42,9 +51,19 @@ export function Layout({ children }: { children: ComponentChildren }) {
               </a>
             );
           })}
+          <button
+            ref={historyBtnRef}
+            class={styles.historyBtn}
+            onClick={() => setShowHistory(true)}
+            aria-label="履歴を開く"
+          >
+            <span class={styles.navIcon} aria-hidden="true">🕘</span>
+            <span class={styles.navLabel}>履歴</span>
+          </button>
         </nav>
       </header>
       <main>{children}</main>
+      {showHistory && <HistoryModal onClose={handleClose} />}
       <footer class={styles.footer}>
         <small>
           © {new Date().getFullYear()} Mainichi Tarots · 画像アセットを含まない、ブラウザで動く占い SPA
