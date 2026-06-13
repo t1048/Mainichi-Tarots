@@ -1,18 +1,18 @@
-import { useState, useCallback, useRef, useMemo } from 'preact/hooks';
+import { useState, useCallback, useMemo } from 'preact/hooks';
 import { Button } from '../components/Button';
 import { CopyResultButton } from '../components/CopyResultButton';
 import { ResultPanel } from '../components/ResultPanel';
 import {
   buildHexagramFrom,
-  throwCoins,
   TRIGRAMS,
   type CoinThrow,
   type HexagramBuilt,
   type Line,
   type Trigram,
 } from '../data/iching-meta';
-import { secureRandomInt } from '../lib/rng';
 import { saveHistoryEntry, type LoveIChingHistoryDetail, buildLoveIChingSummary, newHistoryId } from '../lib/history';
+import { runCoinTossAnimation } from '../lib/iching-toss';
+import { useSaveOnce } from '../lib/use-save-once';
 import styles from './LoveIChing.module.css';
 
 type Phase = 'idle-you' | 'throwing-you' | 'done-you' | 'throwing-partner' | 'done';
@@ -101,7 +101,34 @@ export function LoveIChing() {
   const [throwLog, setThrowLog] = useState<CoinThrow[]>([]);
   const [yourThrows, setYourThrows] = useState<CoinThrow[] | null>(null);
   const [partnerThrows, setPartnerThrows] = useState<CoinThrow[] | null>(null);
-  const savedRef = useRef(false);
+
+  const { save: saveResult, reset: resetSave } = useSaveOnce<{
+    yourBuilt: HexagramBuilt;
+    partnerBuilt: HexagramBuilt;
+    a: HexagramBuilt;
+    b: HexagramBuilt;
+  }>(({ yourBuilt, partnerBuilt, a, b }) => {
+    const detail: LoveIChingHistoryDetail = {
+      kind: 'love-iching',
+      yourHexNum: yourBuilt.hex.num,
+      yourHexName: yourBuilt.hex.nameJp,
+      partnerHexNum: partnerBuilt.hex.num,
+      partnerHexName: partnerBuilt.hex.nameJp,
+      aHexNum: a.hex.num,
+      aHexName: a.hex.nameJp,
+      bHexNum: b.hex.num,
+      bHexName: b.hex.nameJp,
+      aJudgment: a.hex.judgment,
+      bJudgment: b.hex.judgment,
+    };
+    saveHistoryEntry({
+      id: newHistoryId(),
+      kind: 'love-iching',
+      date: new Date().toISOString(),
+      summary: buildLoveIChingSummary(a.hex.nameJp, b.hex.nameJp),
+      detail,
+    });
+  });
 
   const isStepActive = (s: Step): boolean =>
     (s === 'you' && (phase === 'idle-you' || phase === 'throwing-you')) ||
@@ -112,45 +139,22 @@ export function LoveIChing() {
     (s === 'partner' && phase === 'done');
 
   const runSixThrows = useCallback(async (): Promise<CoinThrow[]> => {
-    const log: CoinThrow[] = [];
-    for (let i = 0; i < 6; i++) {
-      const startTime = Date.now();
-      const totalMs = 600 + secureRandomInt(300);
-      let stopped = false;
-      const animate = (): Promise<void> =>
-        new Promise((resolve) => {
-          const tick = () => {
-            if (stopped || Date.now() - startTime > totalMs) {
-              resolve();
-              return;
-            }
-            setCoinStates([
-              secureRandomInt(2) === 1 ? 'h' : 't',
-              secureRandomInt(2) === 1 ? 'h' : 't',
-              secureRandomInt(2) === 1 ? 'h' : 't',
-            ]);
-            requestAnimationFrame(tick);
-          };
-          tick();
-        });
-      await animate();
-      const t = throwCoins();
-      log.push(t);
-      setThrowLog([...log]);
-      setCoinStates(t.coins.map((c) => (c === 1 ? 'h' : 't')));
-      await new Promise((r) => setTimeout(r, 350));
-      stopped = true;
-    }
-    return log;
+    return runCoinTossAnimation({
+      onDisplay: (states) => setCoinStates(states),
+      onThrow: (t, log) => {
+        setThrowLog([...log]);
+        setCoinStates(t.coins.map((c) => (c === 1 ? 'h' : 't')));
+      },
+    });
   }, []);
 
   const startThrowing = useCallback(async () => {
     if (phase === 'throwing-you' || phase === 'throwing-partner') return;
-    savedRef.current = false;
     setThrowLog([]);
     setCoinStates([null, null, null]);
 
     if (phase === 'idle-you') {
+      resetSave();
       setPhase('throwing-you');
       const log = await runSixThrows();
       setYourThrows(log);
@@ -166,26 +170,7 @@ export function LoveIChing() {
       const partnerBuilt = buildHexagramFrom(log);
       const a = combineHexagrams(yourBuilt, partnerBuilt, 'A');
       const b = combineHexagrams(yourBuilt, partnerBuilt, 'B');
-      const detail: LoveIChingHistoryDetail = {
-        kind: 'love-iching',
-        yourHexNum: yourBuilt.hex.num,
-        yourHexName: yourBuilt.hex.nameJp,
-        partnerHexNum: partnerBuilt.hex.num,
-        partnerHexName: partnerBuilt.hex.nameJp,
-        aHexNum: a.hex.num,
-        aHexName: a.hex.nameJp,
-        bHexNum: b.hex.num,
-        bHexName: b.hex.nameJp,
-        aJudgment: a.hex.judgment,
-        bJudgment: b.hex.judgment,
-      };
-      saveHistoryEntry({
-        id: newHistoryId(),
-        kind: 'love-iching',
-        date: new Date().toISOString(),
-        summary: buildLoveIChingSummary(a.hex.nameJp, b.hex.nameJp),
-        detail,
-      });
+      saveResult({ yourBuilt, partnerBuilt, a, b });
       setPhase('done');
       return;
     }
@@ -197,7 +182,7 @@ export function LoveIChing() {
       setCoinStates([null, null, null]);
       setPhase('idle-you');
     }
-  }, [phase, yourThrows, runSixThrows]);
+  }, [phase, yourThrows, runSixThrows, resetSave, saveResult]);
 
   const showBoard = phase === 'throwing-you' || phase === 'throwing-partner';
   const stepLabel = phase === 'idle-you' || phase === 'throwing-you' || phase === 'done-you'

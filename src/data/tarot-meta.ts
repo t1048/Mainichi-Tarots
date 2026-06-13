@@ -7,6 +7,13 @@ export type CourtRank = 'page' | 'knight' | 'queen' | 'king';
 export type Orientation = 'upright' | 'reversed';
 export type Position = 'past' | 'present' | 'future' | 'today';
 
+export const POSITION_LABELS: Record<Position, string> = {
+  past: '過去',
+  present: '現在',
+  future: '未来',
+  today: '今日',
+};
+
 export interface CardMeaning {
   keywords: string[];
   summary: string;
@@ -85,6 +92,10 @@ export const ALL_CARDS: readonly TarotCard[] = [...majors, ...minors];
 
 export function findCard(id: string): TarotCard | undefined {
   return ALL_CARDS.find((c) => c.id === id);
+}
+
+export function orientationLabel(orientation: Orientation): string {
+  return orientation === 'upright' ? '正位置' : '逆位置';
 }
 
 export const SUIT_LABELS: Record<Suit, { name: string; color: string; icon: string }> = {

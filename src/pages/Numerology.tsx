@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks';
+import { useCallback, useEffect, useMemo, useState } from 'preact/hooks';
 import { Button } from '../components/Button';
 import { CopyResultButton } from '../components/CopyResultButton';
 import { ResultPanel } from '../components/ResultPanel';
@@ -12,6 +12,8 @@ import {
   type NumerologyResult,
 } from '../data/numerology-meta';
 import { loadJSON, saveJSON } from '../lib/storage';
+import { pickRandom } from '../lib/rng';
+import { useSaveOnce } from '../lib/use-save-once';
 import {
   buildNumerologySummary,
   newHistoryId,
@@ -84,7 +86,6 @@ export function Numerology() {
   const [tab, setTab] = useState<ResultTab>('lifePath');
   const [spinLife, setSpinLife] = useState<number | null>(null);
   const [spinYear, setSpinYear] = useState<number | null>(null);
-  const savedRef = useRef(false);
 
   const maxDay = daysInMonth(year, month);
   const dayOptions = useMemo(
@@ -96,9 +97,7 @@ export function Numerology() {
     if (day > maxDay) setDay(maxDay);
   }, [day, maxDay]);
 
-  const saveResult = useCallback((r: NumerologyResult) => {
-    if (savedRef.current) return;
-    savedRef.current = true;
+  const { save: saveResult, reset: resetSave } = useSaveOnce<NumerologyResult>((r) => {
     const detail: NumerologyHistoryDetail = {
       kind: 'numerology',
       birthYear: r.birthDate.year,
@@ -118,12 +117,12 @@ export function Numerology() {
       summary: buildNumerologySummary(r.lifePath, r.personalYear, r.year),
       detail,
     });
-  }, []);
+  });
 
   const runCalculation = useCallback(
     (birthDate: BirthDate) => {
       if (!isValidBirthDate(birthDate.year, birthDate.month, birthDate.day)) return;
-      savedRef.current = false;
+      resetSave();
       setPhase('calculating');
       setTab('lifePath');
       setResult(null);
@@ -135,8 +134,8 @@ export function Numerology() {
       const maxTicks = 18;
       const interval = setInterval(() => {
         ticks += 1;
-        setSpinLife((secureRandomDisplay()));
-        setSpinYear((secureRandomDisplay()));
+        setSpinLife(pickRandom(SPIN_POOL));
+        setSpinYear(pickRandom(SPIN_POOL));
         if (ticks >= maxTicks) {
           clearInterval(interval);
           setSpinLife(final.lifePath);
@@ -147,7 +146,7 @@ export function Numerology() {
         }
       }, 80);
     },
-    [saveResult],
+    [resetSave, saveResult],
   );
 
   const handleSubmit = () => {
@@ -164,7 +163,7 @@ export function Numerology() {
   const handleRecalculate = () => {
     setPhase('input');
     setResult(null);
-    savedRef.current = false;
+    resetSave();
   };
 
   const readingText = useMemo(
@@ -336,12 +335,7 @@ export function Numerology() {
   );
 }
 
-function secureRandomDisplay(): number {
-  const pool = [1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 22, 33];
-  const buf = new Uint32Array(1);
-  crypto.getRandomValues(buf);
-  return pool[buf[0] % pool.length];
-}
+const SPIN_POOL: NumerologyNumber[] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 22, 33];
 
 function numberAccent(n: NumerologyNumber): string {
   const map: Record<NumerologyNumber, string> = {

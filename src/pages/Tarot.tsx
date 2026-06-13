@@ -1,14 +1,16 @@
-import { useEffect, useState, useCallback, useMemo, useRef } from 'preact/hooks';
+import { useEffect, useState, useCallback, useMemo } from 'preact/hooks';
 import { Button } from '../components/Button';
 import { CardSlot } from '../components/CardSlot';
 import { CopyResultButton } from '../components/CopyResultButton';
 import { ResultPanel } from '../components/ResultPanel';
 import { ConfirmDialog } from '../components/ConfirmDialog';
-import { ALL_CARDS, findCard, type TarotCard, type Orientation, type Position } from '../data/tarot-meta';
+import { findCard, orientationLabel, POSITION_LABELS, type TarotCard, type Orientation, type Position } from '../data/tarot-meta';
 import { interpret } from '../data/templates';
-import { secureRandomInt, chance, shuffle } from '../lib/rng';
-import { saveHistoryEntry, type TarotHistoryDetail, buildTarotSummary } from '../lib/history';
-import { loadTodayDaily, saveTodayDaily, type DailyTarot } from '../lib/daily-fortune';
+import { drawTarotCard, drawTarotOrientation, drawUniqueTarotCards } from '../lib/tarot-draw';
+import { saveHistoryEntry, type TarotHistoryDetail, buildTarotSummary, newHistoryId } from '../lib/history';
+import { saveTodayDaily, type DailyTarot } from '../lib/daily-fortune';
+import { useDailyRestore } from '../lib/use-daily-restore';
+import { useSaveOnce } from '../lib/use-save-once';
 import styles from './Tarot.module.css';
 
 type Mode = 'one' | 'three';
@@ -20,26 +22,7 @@ interface DrawnCard {
   position?: Position;
 }
 
-const POSITION_LABELS: Record<NonNullable<Position>, string> = {
-  past: '過去',
-  present: '現在',
-  future: '未来',
-  today: '今日',
-};
-
 const POSITIONS_3: NonNullable<Position>[] = ['past', 'present', 'future'];
-
-function drawCard(): TarotCard {
-  return ALL_CARDS[secureRandomInt(ALL_CARDS.length)];
-}
-
-function drawOrientation(): Orientation {
-  return chance(0.5) ? 'upright' : 'reversed';
-}
-
-function newReadingId(): string {
-  return `${Date.now().toString(36)}-${Math.floor(Math.random() * 1e6).toString(36)}`;
-}
 
 function formatTarotReading(mode: Mode, cards: DrawnCard[]): string {
   const header = mode === 'one' ? '1 枚引き' : '3 枚スプレッド';
@@ -47,8 +30,7 @@ function formatTarotReading(mode: Mode, cards: DrawnCard[]): string {
   for (const d of cards) {
     const pos = d.position ?? 'today';
     const txt = interpret(d.card, d.orientation, pos);
-    const orient = d.orientation === 'upright' ? '正位置' : '逆位置';
-    lines.push(`■ ${POSITION_LABELS[pos]} — ${d.card.nameJp}（${orient}）`);
+    lines.push(`■ ${POSITION_LABELS[pos]} — ${d.card.nameJp}（${orientationLabel(d.orientation)}）`);
     if (txt.keywords.length > 0) {
       lines.push(`キーワード: ${txt.keywords.join(' / ')}`);
     }
@@ -59,24 +41,58 @@ function formatTarotReading(mode: Mode, cards: DrawnCard[]): string {
   return lines.join('\n');
 }
 
+function drawnToDetailRows(cards: DrawnCard[]): TarotHistoryDetail['drawn'] {
+  return cards.map((c) => ({
+    card: c.card,
+    orientation: c.orientation,
+    position: c.position ?? 'today',
+  }));
+}
+
+function buildInterpretation(cards: DrawnCard[]): string {
+  return cards
+    .map((c) => {
+      const txt = interpret(c.card, c.orientation, c.position ?? 'today');
+      return `[${c.position ? POSITION_LABELS[c.position] : '今日'}] ${c.card.nameJp} — ${txt.body}`;
+    })
+    .join('\n\n');
+}
+
 export function Tarot() {
   const [mode, setMode] = useState<Mode>('one');
   const [phase, setPhase] = useState<Phase>('idle');
   const [drawn, setDrawn] = useState<DrawnCard[]>([]);
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const savedRef = useRef(false);
 
-  useEffect(() => {
-    if (mode !== 'one') return;
-    if (phase !== 'idle') return;
-    if (drawn.length > 0) return;
-    const stored = loadTodayDaily<DailyTarot>('tarot');
-    if (!stored) return;
-    const card = findCard(stored.cardId);
-    if (!card) return;
-    setDrawn([{ card, orientation: stored.orientation, position: 'today' }]);
-    setPhase('done');
-  }, [mode]);
+  useDailyRestore<DailyTarot, DrawnCard[]>('tarot', {
+    enabled: mode === 'one' && phase === 'idle' && drawn.length === 0,
+    deps: [mode],
+    resolve: (stored) => {
+      const card = findCard(stored.cardId);
+      if (!card) return null;
+      return [{ card, orientation: stored.orientation, position: 'today' }];
+    },
+    apply: (cards) => {
+      setDrawn(cards);
+      setPhase('done');
+    },
+  });
+
+  const { save: saveReading, reset: resetSave } = useSaveOnce<DrawnCard[]>((cards) => {
+    const detail: TarotHistoryDetail = {
+      kind: 'tarot',
+      mode,
+      drawn: drawnToDetailRows(cards),
+      interpretation: buildInterpretation(cards),
+    };
+    saveHistoryEntry({
+      id: newHistoryId(),
+      kind: 'tarot',
+      date: new Date().toISOString(),
+      summary: buildTarotSummary(drawnToDetailRows(cards)),
+      detail,
+    });
+  });
 
   useEffect(() => {
     if (phase === 'shuffling') {
@@ -87,7 +103,7 @@ export function Tarot() {
       const t = setTimeout(() => {
         setPhase('done');
         if (drawn.length === 0) return;
-        saveCurrent(drawn, mode);
+        saveReading(drawn);
         if (mode === 'one' && drawn.length === 1) {
           const d = drawn[0];
           saveTodayDaily<DailyTarot>('tarot', {
@@ -99,56 +115,28 @@ export function Tarot() {
       return () => clearTimeout(t);
     }
     return undefined;
-  }, [phase, drawn, mode]);
-
-  const saveCurrent = useCallback(
-    (cards: DrawnCard[], m: Mode) => {
-      if (cards.length === 0) return;
-      if (savedRef.current) return;
-      savedRef.current = true;
-      const interpretation = cards
-        .map((c) => {
-          const txt = interpret(c.card, c.orientation, c.position ?? 'today');
-          return `[${c.position ? POSITION_LABELS[c.position] : '今日'}] ${c.card.nameJp} — ${txt.body}`;
-        })
-        .join('\n\n');
-      const detail: TarotHistoryDetail = {
-        kind: 'tarot',
-        mode: m,
-        drawn: cards.map((c) => ({ card: c.card, orientation: c.orientation, position: c.position ?? 'today' })),
-        interpretation,
-      };
-      saveHistoryEntry({
-        id: newReadingId(),
-        kind: 'tarot',
-        date: new Date().toISOString(),
-        summary: buildTarotSummary(cards.map((c) => ({ card: c.card, orientation: c.orientation, position: c.position ?? 'today' }))),
-        detail,
-      });
-    },
-    [],
-  );
+  }, [phase, drawn, mode, saveReading]);
 
   const performDraw = useCallback(() => {
     setConfirmOpen(false);
-    savedRef.current = false;
+    resetSave();
     setDrawn([]);
     setPhase('shuffling');
     const cards: DrawnCard[] = [];
     if (mode === 'one') {
-      cards.push({ card: drawCard(), orientation: drawOrientation(), position: 'today' });
+      cards.push({ card: drawTarotCard(), orientation: drawTarotOrientation(), position: 'today' });
     } else {
-      const shuffled = shuffle(ALL_CARDS);
+      const picked = drawUniqueTarotCards(3);
       for (let i = 0; i < 3; i++) {
         cards.push({
-          card: shuffled[i],
-          orientation: drawOrientation(),
+          card: picked[i],
+          orientation: drawTarotOrientation(),
           position: POSITIONS_3[i],
         });
       }
     }
     setTimeout(() => setDrawn(cards), 350);
-  }, [mode]);
+  }, [mode, resetSave]);
 
   const startReading = useCallback(() => {
     if (phase !== 'idle' && phase !== 'done') return;
@@ -262,7 +250,7 @@ export function Tarot() {
               <ResultPanel
                 key={`r-${d.card.id}-${i}`}
                 title={heading}
-                subtitle={`${d.card.nameJp} · ${d.orientation === 'upright' ? '正位置' : '逆位置'}`}
+                subtitle={`${d.card.nameJp} · ${orientationLabel(d.orientation)}`}
                 keywords={txt.keywords}
               >
                 {txt.body}
@@ -281,7 +269,7 @@ export function Tarot() {
           onConfirm={performDraw}
           body={
             <p>
-              今日は「{dailyDrawn.card.nameJp}（{dailyDrawn.orientation === 'upright' ? '正位置' : '逆位置'}）」を引いています。
+              今日は「{dailyDrawn.card.nameJp}（{orientationLabel(dailyDrawn.orientation)}）」を引いています。
             </p>
           }
         />

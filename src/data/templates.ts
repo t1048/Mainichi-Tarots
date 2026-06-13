@@ -1,5 +1,5 @@
 import type { TarotCard, Orientation, Position } from './tarot-meta';
-import { SUIT_LABELS } from './tarot-meta';
+import { orientationLabel, SUIT_LABELS } from './tarot-meta';
 
 const POS_LABEL: Record<Position, string> = {
   past: 'あなたを形作ってきた背景',
@@ -70,5 +70,5 @@ export function suitColor(card: TarotCard): string {
 }
 
 export function describeOrientation(orientation: Orientation): string {
-  return orientation === 'upright' ? '正位置' : '逆位置';
+  return orientationLabel(orientation);
 }

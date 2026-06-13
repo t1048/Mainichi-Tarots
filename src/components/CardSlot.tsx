@@ -1,4 +1,4 @@
-import type { TarotCard, Orientation } from '../data/tarot-meta';
+import { orientationLabel, type TarotCard, type Orientation } from '../data/tarot-meta';
 import { TarotCard as TarotCardView } from './TarotCard';
 import styles from './CardSlot.module.css';
 
@@ -23,7 +23,7 @@ export function CardSlot({ card, orientation, revealed, delayMs = 0, positionLab
         <div class={styles.meta}>
           <strong>{card.nameJp}</strong>
           <span class={styles.orient}>
-            {orientation === 'upright' ? '正位置' : '逆位置'}
+            {orientationLabel(orientation)}
           </span>
         </div>
       )}

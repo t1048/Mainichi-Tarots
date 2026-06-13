@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useMemo, useEffect } from 'preact/hooks';
+import { useState, useCallback, useMemo } from 'preact/hooks';
 import { Button } from '../components/Button';
 import { CopyResultButton } from '../components/CopyResultButton';
 import { ResultPanel } from '../components/ResultPanel';
@@ -12,10 +12,12 @@ import {
   interpretRune,
   RUNE_POSITION_LABEL,
 } from '../data/rune-meta';
-import type { Orientation } from '../data/tarot-meta';
+import { orientationLabel } from '../data/tarot-meta';
 import { secureRandomInt, chance } from '../lib/rng';
 import { saveHistoryEntry, type RuneHistoryDetail, buildRuneSummary, newHistoryId } from '../lib/history';
-import { loadTodayDaily, saveTodayDaily, type DailyRune } from '../lib/daily-fortune';
+import { saveTodayDaily, type DailyRune } from '../lib/daily-fortune';
+import { useDailyRestore } from '../lib/use-daily-restore';
+import { useSaveOnce } from '../lib/use-save-once';
 import styles from './Rune.module.css';
 
 type Phase = 'idle' | 'drawing' | 'revealing' | 'done';
@@ -24,8 +26,7 @@ const POSITIONS: RunePosition[] = ['situation', 'obstacle', 'advice'];
 
 function drawRune(): RuneResult {
   const rune = RUNES[secureRandomInt(RUNES.length)];
-  const orientation: Orientation = chance(0.5) ? 'upright' : 'reversed';
-  return { rune, orientation, position: 'situation' };
+  return { rune, orientation: chance(0.5) ? 'upright' : 'reversed', position: 'situation' };
 }
 
 function rebuildResults(stored: DailyRune): RuneResult[] {
@@ -42,7 +43,7 @@ function formatRuneReading(picked: RuneResult[]): string {
   const lines = ['【ルーン占い】', ''];
   for (const r of picked) {
     lines.push(`■ ${RUNE_POSITION_LABEL[r.position]} — ${r.rune.nameJp}（${r.rune.nameOrigin}）`);
-    lines.push(`${r.orientation === 'upright' ? '正位置' : '逆位置'}`);
+    lines.push(orientationLabel(r.orientation));
     if (r.rune.keywords.length > 0) {
       lines.push(`キーワード: ${r.rune.keywords.join(' / ')}`);
     }
@@ -58,23 +59,19 @@ export function Rune() {
   const [results, setResults] = useState<RuneResult[]>([]);
   const [revealIndex, setRevealIndex] = useState(0);
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const savedRef = useRef(false);
 
-  useEffect(() => {
-    if (phase !== 'idle') return;
-    if (results.length > 0) return;
-    const stored = loadTodayDaily<DailyRune>('rune');
-    if (!stored) return;
-    const rebuilt = rebuildResults(stored);
-    if (rebuilt.length !== 3) return;
-    setResults(rebuilt);
-    setRevealIndex(3);
-    setPhase('done');
-  }, []);
+  useDailyRestore<DailyRune, RuneResult[]>('rune', {
+    enabled: phase === 'idle' && results.length === 0,
+    resolve: (stored) => rebuildResults(stored),
+    apply: (rebuilt) => {
+      if (rebuilt.length !== 3) return;
+      setResults(rebuilt);
+      setRevealIndex(3);
+      setPhase('done');
+    },
+  });
 
-  const saveResults = useCallback((picked: RuneResult[]) => {
-    if (savedRef.current) return;
-    savedRef.current = true;
+  const { save: saveResults, reset: resetSave } = useSaveOnce<RuneResult[]>((picked) => {
     const interpretation = picked
       .map((r) => `[${RUNE_POSITION_LABEL[r.position]}] ${interpretRune(r)}`)
       .join('\n\n');
@@ -90,11 +87,11 @@ export function Rune() {
       summary: buildRuneSummary(picked),
       detail,
     });
-  }, []);
+  });
 
   const performDraw = useCallback(() => {
     setConfirmOpen(false);
-    savedRef.current = false;
+    resetSave();
     setResults([]);
     setRevealIndex(0);
     setPhase('drawing');
@@ -127,7 +124,7 @@ export function Rune() {
       };
       setTimeout(tick, 400);
     }, 700);
-  }, [saveResults]);
+  }, [resetSave, saveResults]);
 
   const startReading = useCallback(() => {
     if (phase === 'drawing' || phase === 'revealing') return;
@@ -188,7 +185,7 @@ export function Rune() {
                 <p class={styles.stoneMeta}>
                   <strong>{result.rune.nameJp}</strong>
                   <span class={styles.orient}>
-                    {result.orientation === 'upright' ? '正位置' : '逆位置'}
+                    {orientationLabel(result.orientation)}
                   </span>
                 </p>
               )}
@@ -203,7 +200,7 @@ export function Rune() {
             <ResultPanel
               key={`${r.rune.id}-${r.position}`}
               title={`${RUNE_POSITION_LABEL[r.position]}の石`}
-              subtitle={`${r.rune.nameJp} · ${r.rune.nameOrigin} · ${r.orientation === 'upright' ? '正位置' : '逆位置'}`}
+              subtitle={`${r.rune.nameJp} · ${r.rune.nameOrigin} · ${orientationLabel(r.orientation)}`}
               keywords={r.rune.keywords}
               tone="purple"
             >

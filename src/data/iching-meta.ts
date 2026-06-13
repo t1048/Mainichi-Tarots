@@ -64,19 +64,18 @@ export function throwCoins(): CoinThrow {
   return { coins, sum, line: meta.line, changing: meta.changing };
 }
 
-export function drawHexagram(): { primary: CoinThrow[]; changed: CoinThrow[]; changedLine: number | null } {
-  const primary: CoinThrow[] = [];
-  for (let i = 0; i < 6; i++) primary.push(throwCoins());
-  const changed: CoinThrow[] = primary.map((t) => {
+export function buildIChingResult(throws: CoinThrow[]): IChingResult {
+  const changed: CoinThrow[] = throws.map((t) => {
     if (!t.changing) return t;
     const flipped: Line = t.line === 1 ? 0 : 1;
     return { ...t, line: flipped };
   });
-  const changedIndex = primary.findIndex((t) => t.changing);
+  const changedIndex = throws.findIndex((t) => t.changing);
   return {
-    primary,
-    changed,
+    primary: buildHexagramFrom(throws),
+    changed: changedIndex >= 0 ? buildHexagramFrom(changed) : null,
     changedLine: changedIndex >= 0 ? changedIndex + 1 : null,
+    throws,
   };
 }
 

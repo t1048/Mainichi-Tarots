@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useMemo, useEffect } from 'preact/hooks';
+import { useState, useCallback, useMemo } from 'preact/hooks';
 import { Button } from '../components/Button';
 import { CopyResultButton } from '../components/CopyResultButton';
 import { ResultPanel } from '../components/ResultPanel';
@@ -12,7 +12,9 @@ import {
   type FortuneCategory,
 } from '../data/omikuji-meta';
 import { saveHistoryEntry, type OmikujiHistoryDetail, buildOmikujiSummary, newHistoryId } from '../lib/history';
-import { loadTodayDaily, saveTodayDaily, type DailyOmikuji } from '../lib/daily-fortune';
+import { saveTodayDaily, type DailyOmikuji } from '../lib/daily-fortune';
+import { useDailyRestore } from '../lib/use-daily-restore';
+import { useSaveOnce } from '../lib/use-save-once';
 import styles from './Omikuji.module.css';
 
 type Phase = 'idle' | 'shaking' | 'drop' | 'done';
@@ -58,22 +60,18 @@ export function Omikuji() {
   const [phase, setPhase] = useState<Phase>('idle');
   const [result, setResult] = useState<OmikujiResult | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const savedRef = useRef(false);
 
-  useEffect(() => {
-    if (phase !== 'idle') return;
-    if (result !== null) return;
-    const stored = loadTodayDaily<DailyOmikuji>('omikuji');
-    if (!stored) return;
-    const rebuilt = rebuildResult(stored);
-    if (!rebuilt) return;
-    setResult(rebuilt);
-    setPhase('done');
-  }, []);
+  useDailyRestore<DailyOmikuji, OmikujiResult>('omikuji', {
+    enabled: phase === 'idle' && result === null,
+    resolve: (stored) => rebuildResult(stored),
+    apply: (rebuilt) => {
+      if (!rebuilt) return;
+      setResult(rebuilt);
+      setPhase('done');
+    },
+  });
 
-  const saveResult = useCallback((r: OmikujiResult) => {
-    if (savedRef.current) return;
-    savedRef.current = true;
+  const { save: saveResult, reset: resetSave } = useSaveOnce<OmikujiResult>((r) => {
     const detail: OmikujiHistoryDetail = {
       kind: 'omikuji',
       level: r.level.level,
@@ -88,11 +86,11 @@ export function Omikuji() {
       summary: buildOmikujiSummary(r.level.level),
       detail,
     });
-  }, []);
+  });
 
   const performDraw = useCallback(() => {
     setConfirmOpen(false);
-    savedRef.current = false;
+    resetSave();
     setResult(null);
     setPhase('shaking');
     setTimeout(() => setPhase('drop'), 900);
@@ -108,7 +106,7 @@ export function Omikuji() {
       });
       setPhase('done');
     }, 1700);
-  }, [saveResult]);
+  }, [resetSave, saveResult]);
 
   const start = useCallback(() => {
     if (phase === 'shaking' || phase === 'drop') return;

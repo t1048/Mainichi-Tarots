@@ -1,5 +1,5 @@
 import runesData from './runes.json';
-import type { Orientation } from './tarot-meta';
+import { orientationLabel, type Orientation } from './tarot-meta';
 
 export interface Rune {
   id: string;
@@ -33,6 +33,5 @@ export interface RuneResult {
 
 export function interpretRune(result: RuneResult): string {
   const tone = result.orientation === 'upright' ? result.rune.upright : result.rune.reversed;
-  const orient = result.orientation === 'upright' ? '正位置' : '逆位置';
-  return `${result.rune.nameJp}(${result.rune.nameOrigin}) — ${orient}\n${tone}`;
+  return `${result.rune.nameJp}(${result.rune.nameOrigin}) — ${orientationLabel(result.orientation)}\n${tone}`;
 }

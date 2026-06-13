@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from 'preact/hooks';
+import { useEffect, useMemo, useState } from 'preact/hooks';
 import { Button } from './Button';
 import { CardSlot } from './CardSlot';
 import { ResultPanel } from './ResultPanel';
-import { ALL_CARDS, findCard, type Orientation } from '../data/tarot-meta';
+import { findCard, orientationLabel } from '../data/tarot-meta';
 import { interpret } from '../data/templates';
-import { chance, secureRandomInt } from '../lib/rng';
+import { drawTarotCard, drawTarotOrientation } from '../lib/tarot-draw';
 import {
   buildTarotSummary,
   newHistoryId,
@@ -12,45 +12,21 @@ import {
   type TarotHistoryDetail,
 } from '../lib/history';
 import { loadTodayDaily, saveTodayDaily, type DailyTarot } from '../lib/daily-fortune';
+import { useSaveOnce } from '../lib/use-save-once';
 import styles from './DailyTarotDashboard.module.css';
 
 type Phase = 'idle' | 'shuffling' | 'revealing' | 'done';
 
-interface DrawnDaily {
-  cardId: string;
-  orientation: Orientation;
-}
-
-function drawDaily(): DrawnDaily {
-  const card = ALL_CARDS[secureRandomInt(ALL_CARDS.length)];
-  return {
-    cardId: card.id,
-    orientation: chance(0.5) ? 'upright' : 'reversed',
-  };
-}
-
 export function DailyTarotDashboard() {
   const initial = loadTodayDaily<DailyTarot>('tarot');
   const [phase, setPhase] = useState<Phase>(initial ? 'done' : 'idle');
-  const [drawn, setDrawn] = useState<DrawnDaily | null>(initial);
-  const [historySaved, setHistorySaved] = useState(!!initial);
+  const [drawn, setDrawn] = useState<DailyTarot | null>(initial);
 
   const card = drawn ? findCard(drawn.cardId) : undefined;
 
-  useEffect(() => {
-    if (phase === 'shuffling') {
-      const t = setTimeout(() => setPhase('revealing'), 600);
-      return () => clearTimeout(t);
-    }
-    if (phase === 'revealing') {
-      const t = setTimeout(() => setPhase('done'), 700);
-      return () => clearTimeout(t);
-    }
-    return undefined;
-  }, [phase]);
-
-  const saveReading = useCallback((daily: DrawnDaily, resolvedCard: NonNullable<typeof card>) => {
-    if (historySaved) return;
+  const { save: saveReading, reset: resetSave } = useSaveOnce<DailyTarot>((daily) => {
+    const resolvedCard = findCard(daily.cardId);
+    if (!resolvedCard) return;
     const txt = interpret(resolvedCard, daily.orientation, 'today');
     const detail: TarotHistoryDetail = {
       kind: 'tarot',
@@ -65,20 +41,34 @@ export function DailyTarotDashboard() {
       summary: buildTarotSummary(detail.drawn),
       detail,
     });
-    setHistorySaved(true);
-  }, [historySaved]);
+  });
 
   useEffect(() => {
-    if (phase !== 'done' || !drawn || !card || historySaved) return;
-    saveReading(drawn, card);
-  }, [phase, drawn, card, historySaved, saveReading]);
+    if (phase === 'shuffling') {
+      const t = setTimeout(() => setPhase('revealing'), 600);
+      return () => clearTimeout(t);
+    }
+    if (phase === 'revealing') {
+      const t = setTimeout(() => setPhase('done'), 700);
+      return () => clearTimeout(t);
+    }
+    return undefined;
+  }, [phase]);
+
+  useEffect(() => {
+    if (phase !== 'done' || !drawn) return;
+    saveReading(drawn);
+  }, [phase, drawn, saveReading]);
 
   const startReading = () => {
     if (phase === 'shuffling' || phase === 'revealing') return;
-    setHistorySaved(false);
+    resetSave();
     setDrawn(null);
     setPhase('shuffling');
-    const next = drawDaily();
+    const next: DailyTarot = {
+      cardId: drawTarotCard().id,
+      orientation: drawTarotOrientation(),
+    };
     setTimeout(() => setDrawn(next), 350);
     saveTodayDaily<DailyTarot>('tarot', next);
   };
@@ -137,7 +127,7 @@ export function DailyTarotDashboard() {
       {phase === 'done' && card && drawn && interpretation && (
         <ResultPanel
           title="今日のあなたへのメッセージ"
-          subtitle={`${card.nameJp} · ${drawn.orientation === 'upright' ? '正位置' : '逆位置'}`}
+          subtitle={`${card.nameJp} · ${orientationLabel(drawn.orientation)}`}
           keywords={interpretation.keywords}
           tone="gold"
         >

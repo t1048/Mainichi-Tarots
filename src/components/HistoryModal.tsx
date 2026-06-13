@@ -3,6 +3,7 @@ import { Button } from './Button';
 import { formatDateJP, formatTimeJP } from '../lib/format';
 import { clearHistory, loadAllHistory, type BaseHistoryEntry, type FortuneKind } from '../lib/history';
 import { RUNE_POSITION_LABEL } from '../data/rune-meta';
+import { orientationLabel, POSITION_LABELS } from '../data/tarot-meta';
 import styles from './HistoryModal.module.css';
 
 const FILTER_KINDS: { value: 'all' | FortuneKind; label: string }[] = [
@@ -24,13 +25,6 @@ const KIND_LABELS: Record<FortuneKind, string> = {
   numerology: '数秘術',
   'love-tarot': '恋愛タロット',
   'love-iching': '二人の周易',
-};
-
-const TAROT_POSITION_LABELS: Record<string, string> = {
-  past: '過去',
-  present: '現在',
-  future: '未来',
-  today: '今日',
 };
 
 interface Props {
@@ -136,7 +130,7 @@ function HistoryDetail({ entry }: { entry: BaseHistoryEntry }) {
         <div class={styles.detailBody}>
           {entry.detail.drawn.map((d, i) => (
             <div key={`${d.card.id}-${i}`} class={styles.detailLine}>
-              <strong>{TAROT_POSITION_LABELS[d.position] ?? '今日'}:</strong> {d.card.nameJp} · {d.orientation === 'upright' ? '正位置' : '逆位置'}
+              <strong>{POSITION_LABELS[d.position] ?? '今日'}:</strong> {d.card.nameJp} · {orientationLabel(d.orientation)}
             </div>
           ))}
           <pre class={styles.detailText}>{entry.detail.interpretation}</pre>
@@ -147,7 +141,7 @@ function HistoryDetail({ entry }: { entry: BaseHistoryEntry }) {
         <div class={styles.detailBody}>
           {entry.detail.results.map((r, i) => (
             <div key={`${r.rune.id}-${i}`} class={styles.detailLine}>
-              <strong>{RUNE_POSITION_LABEL[r.position]}:</strong> {r.rune.nameJp} · {r.orientation === 'upright' ? '正位置' : '逆位置'}
+              <strong>{RUNE_POSITION_LABEL[r.position]}:</strong> {r.rune.nameJp} · {orientationLabel(r.orientation)}
             </div>
           ))}
           <pre class={styles.detailText}>{entry.detail.interpretation}</pre>
@@ -182,10 +176,10 @@ function HistoryDetail({ entry }: { entry: BaseHistoryEntry }) {
       return (
         <div class={styles.detailBody}>
           <div class={styles.detailLine}>
-            <strong>あなた:</strong> {entry.detail.you.card.nameJp} · {entry.detail.you.orientation === 'upright' ? '正位置' : '逆位置'}
+            <strong>あなた:</strong> {entry.detail.you.card.nameJp} · {orientationLabel(entry.detail.you.orientation)}
           </div>
           <div class={styles.detailLine}>
-            <strong>相手:</strong> {entry.detail.partner.card.nameJp} · {entry.detail.partner.orientation === 'upright' ? '正位置' : '逆位置'}
+            <strong>相手:</strong> {entry.detail.partner.card.nameJp} · {orientationLabel(entry.detail.partner.orientation)}
           </div>
           <div class={styles.detailLine}><strong>共通テーマ:</strong> {entry.detail.commonTheme}</div>
           <div class={styles.detailLine}><strong>補完関係:</strong> {entry.detail.complement}</div>

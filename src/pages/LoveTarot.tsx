@@ -1,12 +1,13 @@
-import { useEffect, useState, useCallback, useRef, useMemo } from 'preact/hooks';
+import { useEffect, useState, useCallback, useMemo } from 'preact/hooks';
 import { Button } from '../components/Button';
 import { CardSlot } from '../components/CardSlot';
 import { CopyResultButton } from '../components/CopyResultButton';
 import { ResultPanel } from '../components/ResultPanel';
-import { ALL_CARDS, type TarotCard, type Orientation } from '../data/tarot-meta';
+import { orientationLabel, type TarotCard, type Orientation } from '../data/tarot-meta';
 import { interpret } from '../data/templates';
-import { chance, shuffle } from '../lib/rng';
+import { drawTarotOrientation, drawUniqueTarotCards } from '../lib/tarot-draw';
 import { saveHistoryEntry, type LoveTarotHistoryDetail, buildLoveTarotSummary, newHistoryId } from '../lib/history';
+import { useSaveOnce } from '../lib/use-save-once';
 import styles from './LoveTarot.module.css';
 
 type Phase = 'idle' | 'shuffling' | 'revealing' | 'done';
@@ -22,10 +23,6 @@ const POSITION_LABELS: Record<LovePosition, string> = {
   you: 'あなた',
   partner: '相手',
 };
-
-function drawOrientation(): Orientation {
-  return chance(0.5) ? 'upright' : 'reversed';
-}
 
 function toneOf(d: DrawnCard) {
   return d.orientation === 'upright' ? d.card.upright : d.card.reversed;
@@ -76,8 +73,7 @@ function formatLoveTarotReading(drawn: DrawnCard[]): string {
   lines.push('');
   for (const d of drawn) {
     const txt = interpret(d.card, d.orientation, 'today');
-    const orient = d.orientation === 'upright' ? '正位置' : '逆位置';
-    lines.push(`■ ${POSITION_LABELS[d.position]} — ${d.card.nameJp}（${orient}）`);
+    lines.push(`■ ${POSITION_LABELS[d.position]} — ${d.card.nameJp}（${orientationLabel(d.orientation)}）`);
     if (txt.keywords.length > 0) {
       lines.push(`キーワード: ${txt.keywords.join(' / ')}`);
     }
@@ -91,52 +87,53 @@ function formatLoveTarotReading(drawn: DrawnCard[]): string {
 export function LoveTarot() {
   const [phase, setPhase] = useState<Phase>('idle');
   const [drawn, setDrawn] = useState<DrawnCard[]>([]);
-  const savedRef = useRef(false);
+
+  const { save: saveReading, reset: resetSave } = useSaveOnce<DrawnCard[]>((cards) => {
+    const [a, b] = cards;
+    const summary = summarize(a, b);
+    const detail: LoveTarotHistoryDetail = {
+      kind: 'love-tarot',
+      you: { card: a.card, orientation: a.orientation, position: 'today' },
+      partner: { card: b.card, orientation: b.orientation, position: 'today' },
+      commonTheme: summary.commonTheme,
+      complement: summary.complement,
+      tension: summary.tension,
+    };
+    saveHistoryEntry({
+      id: newHistoryId(),
+      kind: 'love-tarot',
+      date: new Date().toISOString(),
+      summary: buildLoveTarotSummary(detail.you, detail.partner),
+      detail,
+    });
+  });
 
   const startReading = useCallback(() => {
     if (phase === 'shuffling' || phase === 'revealing') return;
-    savedRef.current = false;
+    resetSave();
     setDrawn([]);
     setPhase('shuffling');
-    const shuffled = shuffle(ALL_CARDS);
+    const picked = drawUniqueTarotCards(2);
     const cards: DrawnCard[] = [
-      { card: shuffled[0], orientation: drawOrientation(), position: 'you' },
-      { card: shuffled[1], orientation: drawOrientation(), position: 'partner' },
+      { card: picked[0], orientation: drawTarotOrientation(), position: 'you' },
+      { card: picked[1], orientation: drawTarotOrientation(), position: 'partner' },
     ];
     setTimeout(() => {
       setDrawn(cards);
       setPhase('revealing');
     }, 700);
-  }, [phase]);
+  }, [phase, resetSave]);
 
   useEffect(() => {
     if (phase !== 'revealing') return undefined;
     const t = setTimeout(() => {
       setPhase('done');
-      if (drawn.length === 2 && !savedRef.current) {
-        savedRef.current = true;
-        const [a, b] = drawn;
-        const summary = summarize(a, b);
-        // Build TarotDrawn-shaped rows for history (use 'today' as a neutral position)
-        const detail: LoveTarotHistoryDetail = {
-          kind: 'love-tarot',
-          you: { card: a.card, orientation: a.orientation, position: 'today' },
-          partner: { card: b.card, orientation: b.orientation, position: 'today' },
-          commonTheme: summary.commonTheme,
-          complement: summary.complement,
-          tension: summary.tension,
-        };
-        saveHistoryEntry({
-          id: newHistoryId(),
-          kind: 'love-tarot',
-          date: new Date().toISOString(),
-          summary: buildLoveTarotSummary(detail.you, detail.partner),
-          detail,
-        });
+      if (drawn.length === 2) {
+        saveReading(drawn);
       }
     }, 900);
     return () => clearTimeout(t);
-  }, [phase, drawn]);
+  }, [phase, drawn, saveReading]);
 
   const readingText = useMemo(
     () => (phase === 'done' && drawn.length === 2 ? formatLoveTarotReading(drawn) : ''),
@@ -221,7 +218,7 @@ export function LoveTarot() {
                 <ResultPanel
                   key={`r-${d.card.id}-${d.position}`}
                   title={`${POSITION_LABELS[d.position]}のカード`}
-                  subtitle={`${d.card.nameJp} · ${d.orientation === 'upright' ? '正位置' : '逆位置'}`}
+                  subtitle={`${d.card.nameJp} · ${orientationLabel(d.orientation)}`}
                   keywords={txt.keywords}
                   tone={d.position === 'you' ? 'rose' : 'purple'}
                 >
