@@ -1,4 +1,5 @@
 import { LocationProvider, Router, Route } from 'preact-iso';
+import { HashLocationProvider, HASH_LOCATION_CTX } from './lib/hash-location';
 import { Layout } from './components/Layout';
 import { Home } from './pages/Home';
 import { Tarot } from './pages/Tarot';
@@ -7,9 +8,12 @@ import { Omikuji } from './pages/Omikuji';
 import { IChing } from './pages/IChing';
 import { NotFound } from './pages/NotFound';
 
+// preact-iso の Router / useLocation がハッシュルーティング用コンテキストを参照するよう差し替え
+(LocationProvider as unknown as { ctx: typeof HASH_LOCATION_CTX }).ctx = HASH_LOCATION_CTX;
+
 export function App() {
   return (
-    <LocationProvider>
+    <HashLocationProvider>
       <Layout>
         <Router>
           <Route path="/" component={Home} />
@@ -20,6 +24,6 @@ export function App() {
           <Route default component={NotFound} />
         </Router>
       </Layout>
-    </LocationProvider>
+    </HashLocationProvider>
   );
 }

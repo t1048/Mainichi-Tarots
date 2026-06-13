@@ -51,8 +51,9 @@
 .bucketRim {
   position: absolute;
   top: 4px;
-  left: 0;
-  right: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 160px;
   height: 14px;
   background: linear-gradient(180deg, #c8902a, #6a3a14);
   border-radius: 4px 4px 0 0;

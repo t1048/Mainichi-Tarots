@@ -25,13 +25,14 @@ export function Omikuji() {
     <article class={styles.page}>
       <header class={styles.hero}>
         <h1>おみくじ</h1>
-        <p class={styles.lede}>桶を振って、今日の運勢と 11 カテゴリの一言を引きましょう。</p>
+        <p class={styles.lede}>おみくじを振って、今日の運勢と願い事・健康など 11 カテゴリの運勢を引きましょう。</p>
+   
       </header>
 
       <div class={styles.stage} aria-live="polite">
         <div class={`${styles.bucket} ${phase === 'shaking' ? styles.shaking : ''}`}>
           <div class={styles.bucketBody}>
-            <span class={styles.bucketMark} aria-hidden="true">御神籤</span>
+            <span class={styles.bucketMark} aria-hidden="true">おみくじ</span>
           </div>
           <div class={styles.bucketRim} />
           <div class={styles.bucketShadow} />
@@ -45,7 +46,7 @@ export function Omikuji() {
 
       <div class={styles.action}>
         <Button onClick={start} size="lg" loading={phase === 'shaking'} disabled={phase === 'drop'}>
-          {phase === 'idle' || phase === 'done' ? '桶を振る' : phase === 'shaking' ? '振っています…' : '籤が落ちてきます…'}
+          {phase === 'idle' || phase === 'done' ? '桶を振る' : phase === 'shaking' ? '振っています…' : 'おみくじが出てきます…'}
         </Button>
       </div>
 
@@ -62,7 +63,7 @@ export function Omikuji() {
             <p class={styles.bigSummary}>{result.level.summary}</p>
           </div>
 
-          <h2 class={styles.catTitle}>カテゴリ別</h2>
+          <h2 class={styles.catTitle}>カテゴリ別の運勢</h2>
           <div class={styles.catGrid}>
             {result.categories.map((c) => (
               <ResultPanel
