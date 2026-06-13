@@ -7,7 +7,7 @@ interface NavCard {
   title: string;
   icon: string;
   desc: string;
-  accent: 'gold' | 'purple' | 'rose' | 'indigo';
+  accent: 'gold' | 'purple' | 'rose' | 'indigo' | 'love';
   primary?: boolean;
 }
 
@@ -40,6 +40,13 @@ const NAV_CARDS: NavCard[] = [
     icon: '☯',
     desc: '64 卦から 1 卦 + 変爻を引く。6 回のコイン投げを再現。',
     accent: 'indigo',
+  },
+  {
+    href: '/love',
+    title: '恋愛・相性占い',
+    icon: '♥',
+    desc: '2 人の関係をタロットと周易で読む。あなたと相手の組み合わせを占う。',
+    accent: 'love',
   },
 ];
 

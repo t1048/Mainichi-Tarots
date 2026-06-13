@@ -152,6 +152,16 @@
   color: var(--color-text);
 }
 
+.badge.love-tarot {
+  background: linear-gradient(120deg, var(--color-rose), var(--color-purple-soft));
+  color: var(--color-text);
+}
+
+.badge.love-iching {
+  background: linear-gradient(120deg, var(--color-purple-soft), var(--color-gold-soft));
+  color: var(--color-bg-0);
+}
+
 .summary {
   font-weight: 600;
   color: var(--color-gold-soft);

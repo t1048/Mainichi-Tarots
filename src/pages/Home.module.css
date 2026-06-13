@@ -47,6 +47,15 @@
   }
 }
 
+@media (min-width: 960px) {
+  .grid {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+  .primary {
+    grid-column: 1 / -1;
+  }
+}
+
 .card {
   position: relative;
   display: flex;
@@ -97,6 +106,19 @@
 
 .indigo::before {
   background: radial-gradient(circle at 100% 0%, rgba(109, 143, 196, 0.25), transparent 50%);
+}
+
+.love::before {
+  background: radial-gradient(circle at 100% 0%, rgba(232, 142, 168, 0.3), transparent 50%);
+}
+
+.love {
+  border-color: rgba(208, 107, 138, 0.4);
+}
+
+.love:hover {
+  border-color: var(--color-rose);
+  box-shadow: 0 0 24px rgba(208, 107, 138, 0.35);
 }
 
 .primary {

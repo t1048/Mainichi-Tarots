@@ -16,6 +16,7 @@ const NAV: NavItem[] = [
   { href: '/rune', label: 'ルーン', icon: 'ᛟ' },
   { href: '/omikuji', label: 'おみくじ', icon: '⛩' },
   { href: '/iching', label: '周易', icon: '☯' },
+  { href: '/love', label: '恋愛', icon: '♥' },
 ];
 
 export function Layout({ children }: { children: ComponentChildren }) {
@@ -38,7 +39,10 @@ export function Layout({ children }: { children: ComponentChildren }) {
         </a>
         <nav class={styles.nav} aria-label="主要ナビゲーション">
           {NAV.map((item) => {
-            const active = path === item.href || (item.href === '/' && path === '/');
+            const active =
+              item.href === '/'
+                ? path === '/'
+                : path === item.href || path.startsWith(`${item.href}/`);
             return (
               <a
                 key={item.href}

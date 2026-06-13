@@ -6,6 +6,9 @@ import { Tarot } from './pages/Tarot';
 import { Rune } from './pages/Rune';
 import { Omikuji } from './pages/Omikuji';
 import { IChing } from './pages/IChing';
+import { LoveHome } from './pages/LoveHome';
+import { LoveTarot } from './pages/LoveTarot';
+import { LoveIChing } from './pages/LoveIChing';
 import { NotFound } from './pages/NotFound';
 
 // preact-iso の Router / useLocation がハッシュルーティング用コンテキストを参照するよう差し替え
@@ -21,6 +24,9 @@ export function App() {
           <Route path="/rune" component={Rune} />
           <Route path="/omikuji" component={Omikuji} />
           <Route path="/iching" component={IChing} />
+          <Route path="/love" component={LoveHome} />
+          <Route path="/love/tarot" component={LoveTarot} />
+          <Route path="/love/iching" component={LoveIChing} />
           <Route default component={NotFound} />
         </Router>
       </Layout>

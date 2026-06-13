@@ -11,6 +11,8 @@ const FILTER_KINDS: { value: 'all' | FortuneKind; label: string }[] = [
   { value: 'rune', label: 'ルーン' },
   { value: 'omikuji', label: 'おみくじ' },
   { value: 'iching', label: '周易' },
+  { value: 'love-tarot', label: '恋愛タロット' },
+  { value: 'love-iching', label: '二人の周易' },
 ];
 
 const KIND_LABELS: Record<FortuneKind, string> = {
@@ -18,6 +20,8 @@ const KIND_LABELS: Record<FortuneKind, string> = {
   rune: 'ルーン',
   omikuji: 'おみくじ',
   iching: '周易',
+  'love-tarot': '恋愛タロット',
+  'love-iching': '二人の周易',
 };
 
 const TAROT_POSITION_LABELS: Record<string, string> = {
@@ -170,6 +174,31 @@ function HistoryDetail({ entry }: { entry: BaseHistoryEntry }) {
             <div class={styles.detailLine}><strong>変爻:</strong> 第{entry.detail.changedLine}爻</div>
           )}
           <div class={styles.detailLine}>{entry.detail.judgment}</div>
+        </div>
+      );
+    case 'love-tarot':
+      return (
+        <div class={styles.detailBody}>
+          <div class={styles.detailLine}>
+            <strong>あなた:</strong> {entry.detail.you.card.nameJp} · {entry.detail.you.orientation === 'upright' ? '正位置' : '逆位置'}
+          </div>
+          <div class={styles.detailLine}>
+            <strong>相手:</strong> {entry.detail.partner.card.nameJp} · {entry.detail.partner.orientation === 'upright' ? '正位置' : '逆位置'}
+          </div>
+          <div class={styles.detailLine}><strong>共通テーマ:</strong> {entry.detail.commonTheme}</div>
+          <div class={styles.detailLine}><strong>補完関係:</strong> {entry.detail.complement}</div>
+          <div class={styles.detailLine}><strong>緊張点:</strong> {entry.detail.tension}</div>
+        </div>
+      );
+    case 'love-iching':
+      return (
+        <div class={styles.detailBody}>
+          <div class={styles.detailLine}><strong>あなた:</strong> {entry.detail.yourHexNum}. {entry.detail.yourHexName}</div>
+          <div class={styles.detailLine}><strong>相手:</strong> {entry.detail.partnerHexNum}. {entry.detail.partnerHexName}</div>
+          <div class={styles.detailLine}><strong>組み合わせ A:</strong> {entry.detail.aHexNum}. {entry.detail.aHexName}</div>
+          <div class={styles.detailLine}><strong>組み合わせ B:</strong> {entry.detail.bHexNum}. {entry.detail.bHexName}</div>
+          <div class={styles.detailLine}><strong>A 卦辞:</strong> {entry.detail.aJudgment}</div>
+          <div class={styles.detailLine}><strong>B 卦辞:</strong> {entry.detail.bJudgment}</div>
         </div>
       );
   }

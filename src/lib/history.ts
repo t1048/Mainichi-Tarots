@@ -2,7 +2,7 @@ import type { TarotCard, Orientation, Position } from '../data/tarot-meta';
 import type { Rune, RunePosition } from '../data/rune-meta';
 import { loadJSON, saveJSON, removeKey } from './storage';
 
-export type FortuneKind = 'tarot' | 'rune' | 'omikuji' | 'iching';
+export type FortuneKind = 'tarot' | 'rune' | 'omikuji' | 'iching' | 'love-tarot' | 'love-iching';
 
 export type TarotMode = 'one' | 'three';
 
@@ -26,22 +26,49 @@ export interface BaseHistoryEntry {
   detail: HistoryDetail;
 }
 
+export interface LoveTarotReading {
+  you: TarotDrawn;
+  partner: TarotDrawn;
+  commonTheme: string;
+  complement: string;
+  tension: string;
+}
+
+export interface LoveIChingReading {
+  yourHexNum: number;
+  yourHexName: string;
+  partnerHexNum: number;
+  partnerHexName: string;
+  aHexNum: number;
+  aHexName: string;
+  bHexNum: number;
+  bHexName: string;
+  aJudgment: string;
+  bJudgment: string;
+}
+
 export type HistoryDetail =
   | { kind: 'tarot'; mode: TarotMode; drawn: TarotDrawn[]; interpretation: string }
   | { kind: 'rune'; results: RuneDrawn[]; interpretation: string }
   | { kind: 'omikuji'; level: string; color: string; summary: string; categories: Array<{ label: string; text: string }> }
-  | { kind: 'iching'; primaryNum: number; primaryName: string; changedNum: number | null; changedName: string | null; changedLine: number | null; judgment: string };
+  | { kind: 'iching'; primaryNum: number; primaryName: string; changedNum: number | null; changedName: string | null; changedLine: number | null; judgment: string }
+  | { kind: 'love-tarot'; you: TarotDrawn; partner: TarotDrawn; commonTheme: string; complement: string; tension: string }
+  | { kind: 'love-iching'; yourHexNum: number; yourHexName: string; partnerHexNum: number; partnerHexName: string; aHexNum: number; aHexName: string; bHexNum: number; bHexName: string; aJudgment: string; bJudgment: string };
 
 export type TarotHistoryDetail = Extract<HistoryDetail, { kind: 'tarot' }>;
 export type RuneHistoryDetail = Extract<HistoryDetail, { kind: 'rune' }>;
 export type OmikujiHistoryDetail = Extract<HistoryDetail, { kind: 'omikuji' }>;
 export type IChingHistoryDetail = Extract<HistoryDetail, { kind: 'iching' }>;
+export type LoveTarotHistoryDetail = Extract<HistoryDetail, { kind: 'love-tarot' }>;
+export type LoveIChingHistoryDetail = Extract<HistoryDetail, { kind: 'love-iching' }>;
 
 const KEYS: Record<FortuneKind, string> = {
   tarot: 'tarot-history',
   rune: 'rune-history',
   omikuji: 'omikuji-history',
   iching: 'iching-history',
+  'love-tarot': 'love-tarot-history',
+  'love-iching': 'love-iching-history',
 };
 
 const RETENTION_DAYS = 14;
@@ -106,6 +133,14 @@ export function buildIChingSummary(primaryName: string, changedName: string | nu
   return changedName ? `${primaryName} → ${changedName}` : primaryName;
 }
 
+export function buildLoveTarotSummary(you: TarotDrawn, partner: TarotDrawn): string {
+  return `${you.card.nameJp} × ${partner.card.nameJp}`;
+}
+
+export function buildLoveIChingSummary(aName: string, bName: string): string {
+  return `${aName} ↔ ${bName}`;
+}
+
 export function loadHistoryEntries(kind: FortuneKind): BaseHistoryEntry[] {
   const raw = loadJSON<unknown[]>(KEYS[kind], []);
   let entries: BaseHistoryEntry[];
@@ -133,7 +168,7 @@ export function saveHistoryEntry(entry: BaseHistoryEntry): void {
 
 export function loadAllHistory(): BaseHistoryEntry[] {
   const all: BaseHistoryEntry[] = [];
-  for (const kind of ['tarot', 'rune', 'omikuji', 'iching'] as FortuneKind[]) {
+  for (const kind of ['tarot', 'rune', 'omikuji', 'iching', 'love-tarot', 'love-iching'] as FortuneKind[]) {
     all.push(...loadHistoryEntries(kind));
   }
   return all.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
@@ -141,7 +176,7 @@ export function loadAllHistory(): BaseHistoryEntry[] {
 
 export function clearHistory(kind: FortuneKind | 'all'): void {
   if (kind === 'all') {
-    for (const k of ['tarot', 'rune', 'omikuji', 'iching'] as FortuneKind[]) {
+    for (const k of ['tarot', 'rune', 'omikuji', 'iching', 'love-tarot', 'love-iching'] as FortuneKind[]) {
       removeKey(KEYS[k]);
     }
   } else {

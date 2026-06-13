@@ -1,0 +1,117 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-7);
+}
+
+.hero {
+  text-align: center;
+  padding: var(--space-6) var(--space-3) var(--space-4);
+}
+
+.title {
+  font-size: clamp(2rem, 6vw, 3.2rem);
+  background: linear-gradient(120deg, var(--color-rose) 0%, var(--color-purple-soft) 50%, var(--color-gold-soft) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  margin-bottom: var(--space-3);
+}
+
+.lede {
+  max-width: 600px;
+  margin: 0 auto;
+  color: var(--color-text-muted);
+  line-height: 1.8;
+}
+
+.grid {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 720px) {
+  .grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: var(--space-5);
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(208, 107, 138, 0.4);
+  background: var(--color-surface);
+  text-decoration: none;
+  color: var(--color-text);
+  transition: transform var(--dur-base) var(--ease-out), border-color var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: radial-gradient(circle at 100% 0%, rgba(208, 107, 138, 0.3), transparent 55%);
+  opacity: 0.7;
+  transition: opacity var(--dur-base) var(--ease-out);
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  border-color: var(--color-rose);
+  box-shadow: 0 0 24px rgba(208, 107, 138, 0.35);
+}
+
+.card:hover::before {
+  opacity: 1;
+}
+
+.cardIcon {
+  font-size: 2.4rem;
+  color: var(--color-rose);
+  margin-bottom: var(--space-2);
+  filter: drop-shadow(0 0 8px rgba(208, 107, 138, 0.5));
+}
+
+.cardTitle {
+  margin: 0 0 var(--space-2);
+  font-size: 1.2rem;
+  color: var(--color-rose);
+}
+
+.cardDesc {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.note {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+}
+
+.note h3 {
+  color: var(--color-rose);
+  margin-bottom: var(--space-3);
+}
+
+.note p,
+.note li {
+  color: var(--color-text-muted);
+  line-height: 1.8;
+}
+
+.note ul {
+  margin: var(--space-2) 0 0;
+  padding-left: var(--space-5);
+}
