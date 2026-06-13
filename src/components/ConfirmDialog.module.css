@@ -1,0 +1,115 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+  display: grid;
+  place-items: center;
+  padding: var(--space-4);
+  background: rgba(11, 5, 24, 0.75);
+  backdrop-filter: blur(4px);
+  animation: fadeIn 200ms var(--ease-out);
+}
+
+.modal {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 480px;
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-1);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-card);
+  animation: slideIn 200ms var(--ease-out);
+  overflow: hidden;
+}
+
+.gold {
+  border-color: rgba(212, 175, 55, 0.4);
+  box-shadow: var(--shadow-card), 0 0 0 1px rgba(212, 175, 55, 0.1);
+}
+
+.purple {
+  border-color: rgba(167, 128, 212, 0.4);
+  box-shadow: var(--shadow-card), 0 0 0 1px rgba(167, 128, 212, 0.1);
+}
+
+.rose {
+  border-color: rgba(208, 107, 138, 0.4);
+  box-shadow: var(--shadow-card), 0 0 0 1px rgba(208, 107, 138, 0.1);
+}
+
+.indigo {
+  border-color: rgba(109, 143, 196, 0.4);
+  box-shadow: var(--shadow-card), 0 0 0 1px rgba(109, 143, 196, 0.1);
+}
+
+.header {
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.title {
+  margin: 0;
+  font-size: 1.15rem;
+  color: var(--color-text);
+}
+
+.gold .title { color: var(--color-gold-soft); }
+.purple .title { color: var(--color-purple-soft); }
+.rose .title { color: var(--color-rose); }
+.indigo .title { color: #8aa6d4; }
+
+.body {
+  padding: var(--space-4) var(--space-5);
+  color: var(--color-text);
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.bodyInner {
+  margin: 0 0 var(--space-3);
+  white-space: pre-wrap;
+}
+
+.bodyInner p {
+  margin: 0 0 var(--space-2);
+}
+
+.bodyInner p:last-child {
+  margin-bottom: 0;
+}
+
+.note {
+  margin: var(--space-3) 0 0;
+  padding-top: var(--space-3);
+  border-top: 1px dashed var(--color-border);
+  font-size: 0.8rem;
+  color: var(--color-text-faint);
+  text-align: center;
+}
+
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-5);
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .overlay,
+  .modal {
+    animation: none;
+  }
+}

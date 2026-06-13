@@ -1,11 +1,19 @@
-import { useState, useCallback, useRef, useMemo } from 'preact/hooks';
+import { useState, useCallback, useRef, useMemo, useEffect } from 'preact/hooks';
 import { Button } from '../components/Button';
 import { CopyResultButton } from '../components/CopyResultButton';
 import { ResultPanel } from '../components/ResultPanel';
-import { drawHexagram, buildHexagramFrom, type IChingResult, type Line, type CoinThrow } from '../data/iching-meta';
+import { ConfirmDialog } from '../components/ConfirmDialog';
+import {
+  drawHexagram,
+  buildHexagramFrom,
+  type CoinThrow,
+  type IChingResult,
+  type Line,
+} from '../data/iching-meta';
 import { TRIGRAM_MAP } from '../data/iching-meta';
 import { secureRandomInt } from '../lib/rng';
 import { saveHistoryEntry, type IChingHistoryDetail, buildIChingSummary, newHistoryId } from '../lib/history';
+import { loadTodayDaily, saveTodayDaily, type DailyIChing } from '../lib/daily-fortune';
 import styles from './IChing.module.css';
 
 type Phase = 'idle' | 'throwing' | 'thrown' | 'done';
@@ -14,6 +22,28 @@ const LINE_NAME: Record<Line, { label: string; char: string }> = {
   0: { label: '陰', char: '⚋' },
   1: { label: '陽', char: '⚊' },
 };
+
+function rebuildChanged(primaryThrows: CoinThrow[], changedLine: number | null): CoinThrow[] {
+  if (changedLine === null) return [];
+  return primaryThrows.map((t, i) => {
+    if (i + 1 !== changedLine) return t;
+    const flipped: Line = t.line === 1 ? 0 : 1;
+    return { ...t, line: flipped };
+  });
+}
+
+function rebuildResult(stored: DailyIChing): IChingResult | null {
+  if (stored.primaryThrows.length !== 6) return null;
+  const primary = buildHexagramFrom(stored.primaryThrows);
+  const changedThrows = rebuildChanged(stored.primaryThrows, stored.changedLine);
+  const changed = stored.changedLine !== null ? buildHexagramFrom(changedThrows) : null;
+  return {
+    primary,
+    changed,
+    changedLine: stored.changedLine,
+    throws: stored.primaryThrows,
+  };
+}
 
 function formatIChingReading(r: IChingResult): string {
   const lines = [
@@ -42,7 +72,22 @@ export function IChing() {
   const [coinStates, setCoinStates] = useState<Array<'h' | 't' | null>>([null, null, null]);
   const [result, setResult] = useState<IChingResult | null>(null);
   const [throwLog, setThrowLog] = useState<CoinThrow[]>([]);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const savedRef = useRef(false);
+
+  useEffect(() => {
+    if (phase !== 'idle') return;
+    if (result !== null) return;
+    const stored = loadTodayDaily<DailyIChing>('iching');
+    if (!stored) return;
+    const rebuilt = rebuildResult(stored);
+    if (!rebuilt) return;
+    const finalThrow = stored.primaryThrows[stored.primaryThrows.length - 1];
+    setCoinStates(finalThrow.coins.map((c) => (c === 1 ? 'h' : 't')));
+    setThrowLog(stored.primaryThrows);
+    setResult(rebuilt);
+    setPhase('done');
+  }, []);
 
   const saveResult = useCallback((r: IChingResult) => {
     if (savedRef.current) return;
@@ -65,13 +110,14 @@ export function IChing() {
     });
   }, []);
 
-  const startThrowing = useCallback(async () => {
-    if (phase === 'throwing' || phase === 'thrown') return;
+  const performDraw = useCallback(async () => {
+    setConfirmOpen(false);
     savedRef.current = false;
     setResult(null);
     setThrowLog([]);
     setPhase('throwing');
 
+    const collected: CoinThrow[] = [];
     for (let i = 0; i < 6; i++) {
       const startTime = Date.now();
       const totalMs = 700 + secureRandomInt(300);
@@ -102,6 +148,7 @@ export function IChing() {
       const line: 0 | 1 = sum === 6 || sum === 8 ? 0 : 1;
       const changing = sum === 6 || sum === 9;
       const final: CoinThrow = { coins, sum, line, changing };
+      collected.push(final);
       setThrowLog((prev) => [...prev, final]);
       setCoinStates(coins.map((c) => (c === 1 ? 'h' : 't')));
       await new Promise((r) => setTimeout(r, 400));
@@ -119,13 +166,28 @@ export function IChing() {
     };
     setResult(builtResult);
     saveResult(builtResult);
+    saveTodayDaily<DailyIChing>('iching', {
+      primaryThrows: collected,
+      changedLine: r.changedLine,
+    });
     setPhase('done');
-  }, [phase, saveResult]);
+  }, [saveResult]);
+
+  const startThrowing = useCallback(() => {
+    if (phase === 'throwing' || phase === 'thrown') return;
+    if (phase === 'done' && result !== null) {
+      setConfirmOpen(true);
+      return;
+    }
+    void performDraw();
+  }, [phase, result, performDraw]);
 
   const readingText = useMemo(
     () => (result && phase === 'done' ? formatIChingReading(result) : ''),
     [result, phase],
   );
+
+  const dailyLoaded = phase === 'done' && result !== null;
 
   return (
     <article class={styles.page}>
@@ -166,7 +228,9 @@ export function IChing() {
 
       <div class={styles.action}>
         <Button onClick={startThrowing} size="lg" loading={phase === 'throwing'}>
-          {phase === 'idle' || phase === 'done' ? 'コインを 6 回投げる' : '投げています…'}
+          {phase === 'idle' || phase === 'done'
+            ? dailyLoaded ? 'もう一度 6 回投げる（確認あり）' : 'コインを 6 回投げる'
+            : '投げています…'}
         </Button>
         {result && phase === 'done' && <CopyResultButton text={readingText} />}
       </div>
@@ -236,6 +300,22 @@ export function IChing() {
           <li><strong>老陰 (6)</strong>: 陰の極み。これからの変化は陽へ。</li>
         </ul>
       </section>
+
+      {confirmOpen && result && (
+        <ConfirmDialog
+          title="もう一度引きますか?"
+          tone="indigo"
+          confirmLabel="もう一度引く"
+          onCancel={() => setConfirmOpen(false)}
+          onConfirm={performDraw}
+          body={
+            <p>
+              今日は「{result.primary.hex.nameJp}{result.changed ? ` → ${result.changed.hex.nameJp}` : ''}」を引いています
+              {result.changedLine !== null ? `（第${result.changedLine}の線が変化）` : ''}。
+            </p>
+          }
+        />
+      )}
     </article>
   );
 }

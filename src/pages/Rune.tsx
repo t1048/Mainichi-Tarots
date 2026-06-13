@@ -1,11 +1,21 @@
-import { useState, useCallback, useRef, useMemo } from 'preact/hooks';
+import { useState, useCallback, useRef, useMemo, useEffect } from 'preact/hooks';
 import { Button } from '../components/Button';
 import { CopyResultButton } from '../components/CopyResultButton';
 import { ResultPanel } from '../components/ResultPanel';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 import { RuneStone } from '../components/RuneStone';
-import { RUNES, type RuneResult, type RunePosition, interpretRune, RUNE_POSITION_LABEL } from '../data/rune-meta';
+import {
+  RUNES,
+  findRune,
+  type RuneResult,
+  type RunePosition,
+  interpretRune,
+  RUNE_POSITION_LABEL,
+} from '../data/rune-meta';
+import type { Orientation } from '../data/tarot-meta';
 import { secureRandomInt, chance } from '../lib/rng';
 import { saveHistoryEntry, type RuneHistoryDetail, buildRuneSummary, newHistoryId } from '../lib/history';
+import { loadTodayDaily, saveTodayDaily, type DailyRune } from '../lib/daily-fortune';
 import styles from './Rune.module.css';
 
 type Phase = 'idle' | 'drawing' | 'revealing' | 'done';
@@ -14,8 +24,18 @@ const POSITIONS: RunePosition[] = ['situation', 'obstacle', 'advice'];
 
 function drawRune(): RuneResult {
   const rune = RUNES[secureRandomInt(RUNES.length)];
-  const orientation = chance(0.5) ? 'upright' : 'reversed';
+  const orientation: Orientation = chance(0.5) ? 'upright' : 'reversed';
   return { rune, orientation, position: 'situation' };
+}
+
+function rebuildResults(stored: DailyRune): RuneResult[] {
+  const out: RuneResult[] = [];
+  for (const r of stored.results) {
+    const rune = findRune(r.runeId);
+    if (!rune) return [];
+    out.push({ rune, orientation: r.orientation, position: r.position });
+  }
+  return out;
 }
 
 function formatRuneReading(picked: RuneResult[]): string {
@@ -37,7 +57,20 @@ export function Rune() {
   const [phase, setPhase] = useState<Phase>('idle');
   const [results, setResults] = useState<RuneResult[]>([]);
   const [revealIndex, setRevealIndex] = useState(0);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const savedRef = useRef(false);
+
+  useEffect(() => {
+    if (phase !== 'idle') return;
+    if (results.length > 0) return;
+    const stored = loadTodayDaily<DailyRune>('rune');
+    if (!stored) return;
+    const rebuilt = rebuildResults(stored);
+    if (rebuilt.length !== 3) return;
+    setResults(rebuilt);
+    setRevealIndex(3);
+    setPhase('done');
+  }, []);
 
   const saveResults = useCallback((picked: RuneResult[]) => {
     if (savedRef.current) return;
@@ -59,8 +92,8 @@ export function Rune() {
     });
   }, []);
 
-  const startReading = useCallback(() => {
-    if (phase === 'drawing' || phase === 'revealing') return;
+  const performDraw = useCallback(() => {
+    setConfirmOpen(false);
     savedRef.current = false;
     setResults([]);
     setRevealIndex(0);
@@ -83,16 +116,34 @@ export function Rune() {
         } else {
           setPhase('done');
           saveResults(picked);
+          saveTodayDaily<DailyRune>('rune', {
+            results: picked.map((r) => ({
+              runeId: r.rune.id,
+              orientation: r.orientation,
+              position: r.position,
+            })),
+          });
         }
       };
       setTimeout(tick, 400);
     }, 700);
-  }, [phase, saveResults]);
+  }, [saveResults]);
+
+  const startReading = useCallback(() => {
+    if (phase === 'drawing' || phase === 'revealing') return;
+    if (phase === 'done' && results.length === 3) {
+      setConfirmOpen(true);
+      return;
+    }
+    performDraw();
+  }, [phase, results.length, performDraw]);
 
   const readingText = useMemo(
     () => (phase === 'done' && results.length === 3 ? formatRuneReading(results) : ''),
     [phase, results],
   );
+
+  const dailyLoaded = phase === 'done' && results.length === 3;
 
   return (
     <article class={styles.page}>
@@ -106,7 +157,9 @@ export function Rune() {
 
       <div class={styles.action}>
         <Button onClick={startReading} size="lg" loading={phase === 'drawing'} disabled={phase === 'revealing'}>
-          {phase === 'idle' || phase === 'done' ? '3 つの石を引く' : phase === 'drawing' ? '石を引いています…' : '石をめくっています…'}
+          {phase === 'idle' || phase === 'done'
+            ? dailyLoaded ? 'もう一度 3 つの石を引く（確認あり）' : '3 つの石を引く'
+            : phase === 'drawing' ? '石を引いています…' : '石をめくっています…'}
         </Button>
         {phase === 'done' && results.length === 3 && <CopyResultButton text={readingText} />}
       </div>
@@ -180,6 +233,21 @@ export function Rune() {
           ))}
         </ul>
       </section>
+
+      {confirmOpen && results.length === 3 && (
+        <ConfirmDialog
+          title="もう一度引きますか?"
+          tone="purple"
+          confirmLabel="もう一度引く"
+          onCancel={() => setConfirmOpen(false)}
+          onConfirm={performDraw}
+          body={
+            <p>
+              今日は「{results.map((r) => r.rune.nameJp).join(' / ')}」を引いています。
+            </p>
+          }
+        />
+      )}
     </article>
   );
 }

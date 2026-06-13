@@ -1,13 +1,14 @@
-import { useEffect, useState, useCallback, useMemo } from 'preact/hooks';
+import { useEffect, useState, useCallback, useMemo, useRef } from 'preact/hooks';
 import { Button } from '../components/Button';
 import { CardSlot } from '../components/CardSlot';
 import { CopyResultButton } from '../components/CopyResultButton';
 import { ResultPanel } from '../components/ResultPanel';
-import { ALL_CARDS } from '../data/tarot-meta';
-import type { TarotCard, Orientation, Position } from '../data/tarot-meta';
+import { ConfirmDialog } from '../components/ConfirmDialog';
+import { ALL_CARDS, findCard, type TarotCard, type Orientation, type Position } from '../data/tarot-meta';
 import { interpret } from '../data/templates';
 import { secureRandomInt, chance, shuffle } from '../lib/rng';
 import { saveHistoryEntry, type TarotHistoryDetail, buildTarotSummary } from '../lib/history';
+import { loadTodayDaily, saveTodayDaily, type DailyTarot } from '../lib/daily-fortune';
 import styles from './Tarot.module.css';
 
 type Mode = 'one' | 'three';
@@ -62,6 +63,20 @@ export function Tarot() {
   const [mode, setMode] = useState<Mode>('one');
   const [phase, setPhase] = useState<Phase>('idle');
   const [drawn, setDrawn] = useState<DrawnCard[]>([]);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const savedRef = useRef(false);
+
+  useEffect(() => {
+    if (mode !== 'one') return;
+    if (phase !== 'idle') return;
+    if (drawn.length > 0) return;
+    const stored = loadTodayDaily<DailyTarot>('tarot');
+    if (!stored) return;
+    const card = findCard(stored.cardId);
+    if (!card) return;
+    setDrawn([{ card, orientation: stored.orientation, position: 'today' }]);
+    setPhase('done');
+  }, [mode]);
 
   useEffect(() => {
     if (phase === 'shuffling') {
@@ -71,7 +86,15 @@ export function Tarot() {
     if (phase === 'revealing') {
       const t = setTimeout(() => {
         setPhase('done');
+        if (drawn.length === 0) return;
         saveCurrent(drawn, mode);
+        if (mode === 'one' && drawn.length === 1) {
+          const d = drawn[0];
+          saveTodayDaily<DailyTarot>('tarot', {
+            cardId: d.card.id,
+            orientation: d.orientation,
+          });
+        }
       }, mode === 'one' ? 700 : 1700);
       return () => clearTimeout(t);
     }
@@ -81,6 +104,8 @@ export function Tarot() {
   const saveCurrent = useCallback(
     (cards: DrawnCard[], m: Mode) => {
       if (cards.length === 0) return;
+      if (savedRef.current) return;
+      savedRef.current = true;
       const interpretation = cards
         .map((c) => {
           const txt = interpret(c.card, c.orientation, c.position ?? 'today');
@@ -104,8 +129,9 @@ export function Tarot() {
     [],
   );
 
-  const startReading = useCallback(() => {
-    if (phase !== 'idle' && phase !== 'done') return;
+  const performDraw = useCallback(() => {
+    setConfirmOpen(false);
+    savedRef.current = false;
     setDrawn([]);
     setPhase('shuffling');
     const cards: DrawnCard[] = [];
@@ -122,33 +148,40 @@ export function Tarot() {
       }
     }
     setTimeout(() => setDrawn(cards), 350);
-  }, [mode, phase]);
+  }, [mode]);
 
-  const revealState: Record<number, boolean> = useMemo(() => {
-    if (phase === 'shuffling' || phase === 'idle') return {};
-    if (phase === 'revealing') {
-      return drawn.reduce<Record<number, boolean>>((acc, _, i) => {
-        acc[i] = true;
-        return acc;
-      }, {});
+  const startReading = useCallback(() => {
+    if (phase !== 'idle' && phase !== 'done') return;
+    if (mode === 'one' && phase === 'done' && drawn.length === 1) {
+      setConfirmOpen(true);
+      return;
     }
-    return drawn.reduce<Record<number, boolean>>((acc, _, i) => {
-      acc[i] = true;
-      return acc;
-    }, {});
-  }, [phase, drawn]);
+    performDraw();
+  }, [mode, phase, drawn, performDraw]);
 
   const handleModeSwitch = (next: Mode) => {
     if (next === mode) return;
     setMode(next);
     setDrawn([]);
     setPhase('idle');
+    setConfirmOpen(false);
   };
+
+  const revealState: Record<number, boolean> = useMemo(() => {
+    if (phase === 'shuffling' || phase === 'idle') return {};
+    return drawn.reduce<Record<number, boolean>>((acc, _, i) => {
+      acc[i] = true;
+      return acc;
+    }, {});
+  }, [phase, drawn]);
 
   const readingText = useMemo(
     () => (phase === 'done' && drawn.length > 0 ? formatTarotReading(mode, drawn) : ''),
     [phase, drawn, mode],
   );
+
+  const dailyLoaded = mode === 'one' && phase === 'done' && drawn.length === 1;
+  const dailyDrawn = dailyLoaded ? drawn[0] : null;
 
   return (
     <article class={styles.page}>
@@ -188,7 +221,9 @@ export function Tarot() {
           disabled={phase === 'revealing'}
         >
           {phase === 'idle' || phase === 'done'
-            ? mode === 'one' ? 'カードを 1 枚引く' : 'カードを 3 枚引く'
+            ? mode === 'one'
+              ? dailyLoaded ? 'もう一度引く（確認あり）' : 'カードを 1 枚引く'
+              : 'カードを 3 枚引く'
             : phase === 'shuffling' ? 'シャッフル中…' : 'カードを裏返しています…'}
         </Button>
         {phase === 'done' && drawn.length > 0 && (
@@ -235,6 +270,21 @@ export function Tarot() {
             );
           })}
         </section>
+      )}
+
+      {confirmOpen && dailyDrawn && (
+        <ConfirmDialog
+          title="もう一度引きますか?"
+          tone="gold"
+          confirmLabel="もう一度引く"
+          onCancel={() => setConfirmOpen(false)}
+          onConfirm={performDraw}
+          body={
+            <p>
+              今日は「{dailyDrawn.card.nameJp}（{dailyDrawn.orientation === 'upright' ? '正位置' : '逆位置'}）」を引いています。
+            </p>
+          }
+        />
       )}
     </article>
   );

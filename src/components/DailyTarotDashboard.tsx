@@ -11,28 +11,14 @@ import {
   saveHistoryEntry,
   type TarotHistoryDetail,
 } from '../lib/history';
-import { dateKey, loadJSON, saveJSON } from '../lib/storage';
+import { loadTodayDaily, saveTodayDaily, type DailyTarot } from '../lib/daily-fortune';
 import styles from './DailyTarotDashboard.module.css';
 
-const DAILY_TAROT_KEY = 'daily-tarot';
-
 type Phase = 'idle' | 'shuffling' | 'revealing' | 'done';
-
-interface StoredDaily {
-  date: string;
-  cardId: string;
-  orientation: Orientation;
-}
 
 interface DrawnDaily {
   cardId: string;
   orientation: Orientation;
-}
-
-function loadTodayStored(): StoredDaily | null {
-  const stored = loadJSON<StoredDaily | null>(DAILY_TAROT_KEY, null);
-  if (!stored || stored.date !== dateKey()) return null;
-  return stored;
 }
 
 function drawDaily(): DrawnDaily {
@@ -44,7 +30,7 @@ function drawDaily(): DrawnDaily {
 }
 
 export function DailyTarotDashboard() {
-  const initial = loadTodayStored();
+  const initial = loadTodayDaily<DailyTarot>('tarot');
   const [phase, setPhase] = useState<Phase>(initial ? 'done' : 'idle');
   const [drawn, setDrawn] = useState<DrawnDaily | null>(initial);
   const [historySaved, setHistorySaved] = useState(!!initial);
@@ -94,7 +80,7 @@ export function DailyTarotDashboard() {
     setPhase('shuffling');
     const next = drawDaily();
     setTimeout(() => setDrawn(next), 350);
-    saveJSON(DAILY_TAROT_KEY, { date: dateKey(), ...next });
+    saveTodayDaily<DailyTarot>('tarot', next);
   };
 
   const interpretation = useMemo(() => {
