@@ -50,11 +50,6 @@ export function Home() {
     <article class={styles.page}>
       <section class={styles.hero}>
         <h1 class={styles.title}>今日のひと引きを。</h1>
-        <p class={styles.lede}>
-          ブラウザだけで遊べる、4 つの占い。
-          <br />
-          カードは全部 SVG で描いているから、画像アセットは不要。気になるものをひとつ選んでください。
-        </p>
         <div class={styles.heroActions}>
           <a class={styles.cta} href="#/tarot">
             <Button size="lg">今日のタロットを引く</Button>
