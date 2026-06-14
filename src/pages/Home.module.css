@@ -18,19 +18,6 @@
   margin-bottom: var(--space-3);
 }
 
-.heroActions {
-  display: flex;
-  justify-content: center;
-  gap: var(--space-3);
-  flex-wrap: wrap;
-  margin-bottom: var(--space-4);
-}
-
-.cta,
-.ctaSecondary {
-  text-decoration: none;
-}
-
 .dateLine {
   color: var(--color-text-faint);
 }

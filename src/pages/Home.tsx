@@ -1,4 +1,3 @@
-import { Button } from '../components/Button';
 import { DailyTarotDashboard } from '../components/DailyTarotDashboard';
 import { formatDateJP } from '../lib/format';
 import styles from './Home.module.css';
@@ -72,16 +71,6 @@ export function Home() {
     <article class={styles.page}>
       <section class={styles.hero}>
         <h1 class={styles.title}>今日のひと引きを。</h1>
-        <div class={styles.heroActions}>
-          <a class={styles.cta} href="#/tarot">
-            <Button size="lg">今日のタロットを引く</Button>
-          </a>
-          <a class={styles.ctaSecondary} href="#/omikuji">
-            <Button variant="secondary" size="lg">
-              おみくじを引く
-            </Button>
-          </a>
-        </div>
         <p class={styles.dateLine}>
           <small>{formatDateJP(today)}</small>
         </p>
