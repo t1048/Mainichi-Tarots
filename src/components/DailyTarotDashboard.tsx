@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'preact/hooks';
+import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { Button } from './Button';
 import { CardSlot } from './CardSlot';
 import { ResultPanel } from './ResultPanel';
@@ -21,6 +21,7 @@ export function DailyTarotDashboard() {
   const initial = loadTodayDaily<DailyTarot>('tarot');
   const [phase, setPhase] = useState<Phase>(initial ? 'done' : 'idle');
   const [drawn, setDrawn] = useState<DailyTarot | null>(initial);
+  const isInitialFromStorage = useRef(!!initial);
 
   const card = drawn ? findCard(drawn.cardId) : undefined;
 
@@ -56,6 +57,10 @@ export function DailyTarotDashboard() {
   }, [phase]);
 
   useEffect(() => {
+    if (isInitialFromStorage.current) {
+      isInitialFromStorage.current = false;
+      return;
+    }
     if (phase !== 'done' || !drawn) return;
     saveReading(drawn);
   }, [phase, drawn, saveReading]);
