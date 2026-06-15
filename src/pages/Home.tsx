@@ -52,7 +52,7 @@ const NAV_CARDS: NavCard[] = [
     href: '/love/tarot',
     title: 'タロット相性占い',
     icon: '♥',
-    desc: '78 枚のフルデッキから 2 枚を引き、あなたと相手の関係性を読み解きます。',
+    desc: '78 枚のフルデッキから引き、1 枚 × 1 枚または 3 枚 × 3 枚で二人の関係性を読み解きます。',
     accent: 'love',
   },
   {
