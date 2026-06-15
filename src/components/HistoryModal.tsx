@@ -173,6 +173,26 @@ function HistoryDetail({ entry }: { entry: BaseHistoryEntry }) {
         </div>
       );
     case 'love-tarot':
+      if (entry.detail.mode === 'spread') {
+        return (
+          <div class={styles.detailBody}>
+            <div class={styles.detailLine}><strong>モード:</strong> 3 枚 × 3 枚</div>
+            {entry.detail.youSpread.map((d) => (
+              <div class={styles.detailLine} key={`you-${d.position}`}>
+                <strong>あなた（{POSITION_LABELS[d.position]}）:</strong> {d.card.nameJp} · {orientationLabel(d.orientation)}
+              </div>
+            ))}
+            {entry.detail.partnerSpread.map((d) => (
+              <div class={styles.detailLine} key={`partner-${d.position}`}>
+                <strong>相手（{POSITION_LABELS[d.position]}）:</strong> {d.card.nameJp} · {orientationLabel(d.orientation)}
+              </div>
+            ))}
+            <div class={styles.detailLine}>
+              組み合わせ解説は結果コピーから生成 AI へ依頼できます。
+            </div>
+          </div>
+        );
+      }
       return (
         <div class={styles.detailBody}>
           <div class={styles.detailLine}>

@@ -26,12 +26,21 @@ export interface BaseHistoryEntry {
   detail: HistoryDetail;
 }
 
+export type LoveTarotMode = 'pair' | 'spread';
+
 export interface LoveTarotReading {
+  mode: LoveTarotMode;
   you: TarotDrawn;
   partner: TarotDrawn;
   commonTheme: string;
   complement: string;
   tension: string;
+}
+
+export interface LoveTarotSpreadReading {
+  mode: 'spread';
+  youSpread: TarotDrawn[];
+  partnerSpread: TarotDrawn[];
 }
 
 export interface LoveIChingReading {
@@ -52,7 +61,8 @@ export type HistoryDetail =
   | { kind: 'rune'; results: RuneDrawn[]; interpretation: string }
   | { kind: 'omikuji'; level: string; color: string; summary: string; categories: Array<{ label: string; text: string }> }
   | { kind: 'iching'; primaryNum: number; primaryName: string; changedNum: number | null; changedName: string | null; changedLine: number | null; judgment: string }
-  | { kind: 'love-tarot'; you: TarotDrawn; partner: TarotDrawn; commonTheme: string; complement: string; tension: string }
+  | { kind: 'love-tarot'; mode?: 'pair'; you: TarotDrawn; partner: TarotDrawn; commonTheme: string; complement: string; tension: string }
+  | { kind: 'love-tarot'; mode: 'spread'; youSpread: TarotDrawn[]; partnerSpread: TarotDrawn[] }
   | { kind: 'love-iching'; yourHexNum: number; yourHexName: string; partnerHexNum: number; partnerHexName: string; aHexNum: number; aHexName: string; bHexNum: number; bHexName: string; aJudgment: string; bJudgment: string }
   | { kind: 'numerology'; birthYear: number; birthMonth: number; birthDay: number; lifePath: number; personalYear: number; cycleYear: number; lifePathTitle: string; personalYearTitle: string; summaryText: string };
 
@@ -138,6 +148,13 @@ export function buildIChingSummary(primaryName: string, changedName: string | nu
 
 export function buildLoveTarotSummary(you: TarotDrawn, partner: TarotDrawn): string {
   return `${you.card.nameJp} × ${partner.card.nameJp}`;
+}
+
+export function buildLoveTarotSpreadSummary(youSpread: TarotDrawn[], partnerSpread: TarotDrawn[]): string {
+  const youPresent = youSpread.find((d) => d.position === 'present') ?? youSpread[0];
+  const partnerPresent = partnerSpread.find((d) => d.position === 'present') ?? partnerSpread[0];
+  if (!youPresent || !partnerPresent) return '3 枚 × 3 枚相性';
+  return `${youPresent.card.nameJp} × ${partnerPresent.card.nameJp}（各 3 枚）`;
 }
 
 export function buildLoveIChingSummary(aName: string, bName: string): string {
