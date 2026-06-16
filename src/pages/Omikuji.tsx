@@ -15,7 +15,11 @@ import { saveHistoryEntry, type OmikujiHistoryDetail, buildOmikujiSummary, newHi
 import { saveTodayDaily, type DailyOmikuji } from '../lib/daily-fortune';
 import { useDailyRestore } from '../lib/use-daily-restore';
 import { useSaveOnce } from '../lib/use-save-once';
+import { buildAiCopyText, AI_COPY_LABEL } from '../lib/ai-prompt';
 import styles from './Omikuji.module.css';
+
+const AI_PROMPT =
+  '上記のおみくじの結果を、今日の運勢と各カテゴリの内容を踏まえて、今日の過ごし方の具体的なアドバイスとして読み解いてください。';
 
 type Phase = 'idle' | 'shaking' | 'drop' | 'done';
 
@@ -122,6 +126,8 @@ export function Omikuji() {
     [result, phase],
   );
 
+  const aiReadingText = useMemo(() => buildAiCopyText(readingText, AI_PROMPT), [readingText]);
+
   const dailyLoaded = phase === 'done' && result !== null;
 
   return (
@@ -153,7 +159,12 @@ export function Omikuji() {
             ? dailyLoaded ? 'もう一度桶を振る（確認あり）' : '桶を振る'
             : phase === 'shaking' ? '振っています…' : 'おみくじが出てきます…'}
         </Button>
-        {result && phase === 'done' && <CopyResultButton text={readingText} />}
+        {result && phase === 'done' && (
+          <>
+            <CopyResultButton text={readingText} />
+            <CopyResultButton text={aiReadingText} label={AI_COPY_LABEL} variant="ghost" />
+          </>
+        )}
       </div>
 
       {result && phase === 'done' && (

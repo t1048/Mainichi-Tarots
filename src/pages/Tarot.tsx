@@ -11,7 +11,13 @@ import { saveHistoryEntry, type TarotHistoryDetail, buildTarotSummary, newHistor
 import { saveTodayDaily, type DailyTarot } from '../lib/daily-fortune';
 import { useDailyRestore } from '../lib/use-daily-restore';
 import { useSaveOnce } from '../lib/use-save-once';
+import { buildAiCopyText, AI_COPY_LABEL } from '../lib/ai-prompt';
 import styles from './Tarot.module.css';
+
+const AI_PROMPT_ONE =
+  '上記のタロット占いの結果をもとに、今日のあなたへのメッセージとして、具体的なアドバイスを読み解いてください。';
+const AI_PROMPT_THREE =
+  '上記のタロット占いの結果を、過去・現在・未来の流れを踏まえて統合的に読み解いてください。';
 
 type Mode = 'one' | 'three';
 type Phase = 'idle' | 'shuffling' | 'revealing' | 'done';
@@ -168,6 +174,11 @@ export function Tarot() {
     [phase, drawn, mode],
   );
 
+  const aiReadingText = useMemo(
+    () => buildAiCopyText(readingText, mode === 'one' ? AI_PROMPT_ONE : AI_PROMPT_THREE),
+    [readingText, mode],
+  );
+
   const dailyLoaded = mode === 'one' && phase === 'done' && drawn.length === 1;
   const dailyDrawn = dailyLoaded ? drawn[0] : null;
 
@@ -217,6 +228,7 @@ export function Tarot() {
         {phase === 'done' && drawn.length > 0 && (
           <>
             <CopyResultButton text={readingText} />
+            <CopyResultButton text={aiReadingText} label={AI_COPY_LABEL} variant="ghost" />
             <Button variant="ghost" onClick={() => { setPhase('idle'); setDrawn([]); }}>
               結果を閉じる
             </Button>

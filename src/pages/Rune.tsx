@@ -18,7 +18,11 @@ import { saveHistoryEntry, type RuneHistoryDetail, buildRuneSummary, newHistoryI
 import { saveTodayDaily, type DailyRune } from '../lib/daily-fortune';
 import { useDailyRestore } from '../lib/use-daily-restore';
 import { useSaveOnce } from '../lib/use-save-once';
+import { buildAiCopyText, AI_COPY_LABEL } from '../lib/ai-prompt';
 import styles from './Rune.module.css';
+
+const AI_PROMPT =
+  '上記のルーン占いの結果を、状況・障害・助言の流れを踏まえて統合的に読み解いてください。';
 
 type Phase = 'idle' | 'drawing' | 'revealing' | 'done';
 
@@ -140,6 +144,8 @@ export function Rune() {
     [phase, results],
   );
 
+  const aiReadingText = useMemo(() => buildAiCopyText(readingText, AI_PROMPT), [readingText]);
+
   const dailyLoaded = phase === 'done' && results.length === 3;
 
   return (
@@ -158,7 +164,12 @@ export function Rune() {
             ? dailyLoaded ? 'もう一度 3 つの石を引く（確認あり）' : '3 つの石を引く'
             : phase === 'drawing' ? '石を引いています…' : '石をめくっています…'}
         </Button>
-        {phase === 'done' && results.length === 3 && <CopyResultButton text={readingText} />}
+        {phase === 'done' && results.length === 3 && (
+          <>
+            <CopyResultButton text={readingText} />
+            <CopyResultButton text={aiReadingText} label={AI_COPY_LABEL} variant="ghost" />
+          </>
+        )}
       </div>
 
       <div class={styles.stones} aria-live="polite">

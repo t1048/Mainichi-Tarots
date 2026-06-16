@@ -13,7 +13,11 @@ import {
 import { saveHistoryEntry, type LoveIChingHistoryDetail, buildLoveIChingSummary, newHistoryId } from '../lib/history';
 import { runCoinTossAnimation } from '../lib/iching-toss';
 import { useSaveOnce } from '../lib/use-save-once';
+import { buildAiCopyText, AI_COPY_LABEL } from '../lib/ai-prompt';
 import styles from './LoveIChing.module.css';
+
+const AI_PROMPT =
+  '上記の二人の周易の結果を、それぞれの卦と 2 つの組み合わせ卦から、二人の関係性の観点で統合的に読み解いてください。';
 
 type Phase = 'idle-you' | 'throwing-you' | 'done-you' | 'throwing-partner' | 'done';
 type Step = 'you' | 'partner';
@@ -200,6 +204,8 @@ export function LoveIChing() {
     return formatLoveIChingReading(yourBuilt, partnerBuilt, aCombined, bCombined);
   }, [isComplete, yourBuilt, partnerBuilt, aCombined, bCombined]);
 
+  const aiReadingText = useMemo(() => buildAiCopyText(readingText, AI_PROMPT), [readingText]);
+
   return (
     <article class={styles.page}>
       <header class={styles.hero}>
@@ -267,7 +273,12 @@ export function LoveIChing() {
           {phase === 'throwing-partner' && '投げています…'}
           {phase === 'done' && 'もう一度'}
         </Button>
-        {isComplete && <CopyResultButton text={readingText} />}
+        {isComplete && (
+          <>
+            <CopyResultButton text={readingText} />
+            <CopyResultButton text={aiReadingText} label={AI_COPY_LABEL} variant="ghost" />
+          </>
+        )}
       </div>
 
       {isComplete && yourBuilt && partnerBuilt && aCombined && bCombined && (

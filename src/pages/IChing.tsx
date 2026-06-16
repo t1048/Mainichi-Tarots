@@ -15,7 +15,11 @@ import { saveTodayDaily, type DailyIChing } from '../lib/daily-fortune';
 import { runCoinTossAnimation } from '../lib/iching-toss';
 import { useDailyRestore } from '../lib/use-daily-restore';
 import { useSaveOnce } from '../lib/use-save-once';
+import { buildAiCopyText, AI_COPY_LABEL } from '../lib/ai-prompt';
 import styles from './IChing.module.css';
+
+const AI_PROMPT =
+  '上記の周易（易経）の結果を、本卦と変化した卦の関係を踏まえて、今の状況へのアドバイスとして読み解いてください。';
 
 type Phase = 'idle' | 'throwing' | 'thrown' | 'done';
 
@@ -129,6 +133,8 @@ export function IChing() {
     [result, phase],
   );
 
+  const aiReadingText = useMemo(() => buildAiCopyText(readingText, AI_PROMPT), [readingText]);
+
   const dailyLoaded = phase === 'done' && result !== null;
 
   return (
@@ -174,7 +180,12 @@ export function IChing() {
             ? dailyLoaded ? 'もう一度 6 回投げる（確認あり）' : 'コインを 6 回投げる'
             : '投げています…'}
         </Button>
-        {result && phase === 'done' && <CopyResultButton text={readingText} />}
+        {result && phase === 'done' && (
+          <>
+            <CopyResultButton text={readingText} />
+            <CopyResultButton text={aiReadingText} label={AI_COPY_LABEL} variant="ghost" />
+          </>
+        )}
       </div>
 
       {result && phase === 'done' && (
