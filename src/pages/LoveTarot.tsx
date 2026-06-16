@@ -21,6 +21,7 @@ import {
   type LoveTarotMode,
   type TarotDrawn,
 } from '../lib/history';
+import { summarizeLoveTarotPair } from '../lib/love-tarot-summary';
 import { useSaveOnce } from '../lib/use-save-once';
 import styles from './LoveTarot.module.css';
 
@@ -44,46 +45,6 @@ const SPREAD_POSITIONS: Position[] = ['past', 'present', 'future'];
 const AI_PROMPT_HINT =
   '上記のタロット相性占いの結果を、二人の関係性（過去の経緯・今の関係・これからの展開）の観点から統合的に読み解いてください。';
 
-function toneOf(d: DrawnCard) {
-  return d.orientation === 'upright' ? d.card.upright : d.card.reversed;
-}
-
-function findCommonKeyword(a: string[], b: string[]): string | null {
-  for (const ka of a) {
-    const norm = ka.replace(/[、。・\s]/g, '');
-    for (const kb of b) {
-      if (norm && norm === kb.replace(/[、。・\s]/g, '')) return ka;
-    }
-  }
-  return null;
-}
-
-function pickFirst<T>(arr: T[], fallback: T): T {
-  return arr.length > 0 ? arr[0] : fallback;
-}
-
-function summarize(a: DrawnCard, b: DrawnCard): { commonTheme: string; complement: string; tension: string } {
-  const aTone = toneOf(a);
-  const bTone = toneOf(b);
-  const common = findCommonKeyword(aTone.keywords, bTone.keywords);
-
-  if (common) {
-    return {
-      commonTheme: `二人のあいだに「${common}」という共通のテーマがあります。`,
-      complement: `お互いがこのテーマを大切にしているからこそ、自然に引き合う縁です。`,
-      tension: `ただし、同じテーマを同時に強く求めると、時に主導権のすれ違いが生まれます。`,
-    };
-  }
-
-  const aFirst = pickFirst(aTone.keywords, '前進');
-  const bFirst = pickFirst(bTone.keywords, '安定');
-  return {
-    commonTheme: `二人のあいだに共通のキーワードは見当たりませんが、それが互いの刺激になります。`,
-    complement: `あなたの「${aFirst}」を、相手は「${bFirst}」として補い合えます。`,
-    tension: `刺激が大きい分、時には歩幅の違いに焦りや不満を感じやすい組み合わせです。`,
-  };
-}
-
 function toTarotDrawn(cards: DrawnCard[]): TarotDrawn[] {
   return cards.map((d) => ({
     card: d.card,
@@ -93,7 +54,7 @@ function toTarotDrawn(cards: DrawnCard[]): TarotDrawn[] {
 }
 
 function formatPairReading(drawn: DrawnCard[]): string {
-  const summary = summarize(drawn[0], drawn[1]);
+  const summary = summarizeLoveTarotPair(drawn[0], drawn[1]);
   const lines = ['【タロット相性占い — 1 枚 × 1 枚】', ''];
   lines.push(`■ 共通テーマ\n${summary.commonTheme}`);
   lines.push(`■ 補完関係\n${summary.complement}`);
@@ -177,7 +138,7 @@ export function LoveTarot() {
     ({ mode: savedMode, cards }) => {
       if (savedMode === 'pair') {
         const [a, b] = cards;
-        const summary = summarize(a, b);
+        const summary = summarizeLoveTarotPair(a, b);
         const detail: LoveTarotHistoryDetail = {
           kind: 'love-tarot',
           mode: 'pair',
@@ -360,7 +321,7 @@ export function LoveTarot() {
       )}
 
       {showResults && mode === 'pair' && (() => {
-        const summary = summarize(drawn[0], drawn[1]);
+        const summary = summarizeLoveTarotPair(drawn[0], drawn[1]);
         return (
           <section class={styles.results}>
             <div class={styles.summary}>
