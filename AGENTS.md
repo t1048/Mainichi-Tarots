@@ -75,3 +75,9 @@ There is no `lint`, no `test`, no single-test command. Do not fabricate one.
 - No state library — local `useState` / `useReducer` / `useRef` only.
 - Persisted state goes through `loadJSON` / `saveJSON` in `src/lib/storage.ts`; do not touch `localStorage` directly.
 - A "save once per reading" pattern is enforced with `useRef(false)` flags in pages (e.g. `IChing.tsx`, `LoveTarot.tsx`, `LoveIChing.tsx`) — don't replace these with a plain boolean state, the effect re-fires and you'd double-save.
+
+## Cursor Cloud specific instructions
+
+- Pure static SPA: no backend, database, or other services to start. Running `npm run dev` (Vite on `http://localhost:5173`) is the only service needed to test any flow end to end. Dependencies are refreshed by the startup update script (`npm ci`), so you normally don't need to reinstall.
+- See `## Commands` above for the canonical dev/typecheck/build/preview commands; CI order (typecheck → build) is the fastest pre-PR check.
+- State lives only in `localStorage`; to test from a clean slate, clear site data / use a fresh browser profile rather than expecting a server reset.
