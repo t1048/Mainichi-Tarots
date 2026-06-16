@@ -227,8 +227,7 @@ export function Tarot() {
         </Button>
         {phase === 'done' && drawn.length > 0 && (
           <>
-            <CopyResultButton text={readingText} />
-            <CopyResultButton text={aiReadingText} label={AI_COPY_LABEL} variant="ghost" />
+            <CopyResultButton text={aiReadingText} label={AI_COPY_LABEL} />
             <Button variant="ghost" onClick={() => { setPhase('idle'); setDrawn([]); }}>
               結果を閉じる
             </Button>

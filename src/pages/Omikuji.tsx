@@ -160,10 +160,7 @@ export function Omikuji() {
             : phase === 'shaking' ? '振っています…' : 'おみくじが出てきます…'}
         </Button>
         {result && phase === 'done' && (
-          <>
-            <CopyResultButton text={readingText} />
-            <CopyResultButton text={aiReadingText} label={AI_COPY_LABEL} variant="ghost" />
-          </>
+          <CopyResultButton text={aiReadingText} label={AI_COPY_LABEL} />
         )}
       </div>
 

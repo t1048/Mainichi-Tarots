@@ -181,10 +181,7 @@ export function IChing() {
             : '投げています…'}
         </Button>
         {result && phase === 'done' && (
-          <>
-            <CopyResultButton text={readingText} />
-            <CopyResultButton text={aiReadingText} label={AI_COPY_LABEL} variant="ghost" />
-          </>
+          <CopyResultButton text={aiReadingText} label={AI_COPY_LABEL} />
         )}
       </div>
 

@@ -165,10 +165,7 @@ export function Rune() {
             : phase === 'drawing' ? '石を引いています…' : '石をめくっています…'}
         </Button>
         {phase === 'done' && results.length === 3 && (
-          <>
-            <CopyResultButton text={readingText} />
-            <CopyResultButton text={aiReadingText} label={AI_COPY_LABEL} variant="ghost" />
-          </>
+          <CopyResultButton text={aiReadingText} label={AI_COPY_LABEL} />
         )}
       </div>
 
