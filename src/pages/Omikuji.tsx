@@ -19,6 +19,9 @@ import styles from './Omikuji.module.css';
 
 type Phase = 'idle' | 'shaking' | 'drop' | 'done';
 
+const AI_PROMPT_HINT =
+  '上記のおみくじの結果（運勢・カテゴリ別）を、今日の過ごし方のアドバイスとしてまとめてください。';
+
 function findLevel(name: string): FortuneLevel | undefined {
   return FORTUNES.find((f) => f.level === name);
 }
@@ -51,6 +54,10 @@ function formatOmikujiReading(r: OmikujiResult): string {
   for (const c of r.categories) {
     lines.push(`${c.category.label}: ${c.text}`);
   }
+  lines.push('');
+  lines.push('—');
+  lines.push('以下の文を生成 AI（ChatGPT・Claude・Gemini など）に貼り付けて、占いの結果を統合的に読み解いてもらえます。');
+  lines.push(AI_PROMPT_HINT);
   lines.push('');
   lines.push('— 毎日タロット＆占い');
   return lines.join('\n');
@@ -153,7 +160,7 @@ export function Omikuji() {
             ? dailyLoaded ? 'もう一度桶を振る（確認あり）' : '桶を振る'
             : phase === 'shaking' ? '振っています…' : 'おみくじが出てきます…'}
         </Button>
-        {result && phase === 'done' && <CopyResultButton text={readingText} />}
+        {result && phase === 'done' && <CopyResultButton text={readingText} label="結果をコピー（AI 解説用）" />}
       </div>
 
       {result && phase === 'done' && (

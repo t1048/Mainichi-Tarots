@@ -33,6 +33,9 @@ const LINE_NAME: Record<Line, { label: string; char: string }> = {
   1: { label: '陽', char: '⚊' },
 };
 
+const AI_PROMPT_HINT =
+  '上記 2 人の卦と 2 つの組み合わせ卦から、二人の関係性と相互理解のアドバイスをお願いします。';
+
 function trigramById(hex: HexagramBuilt, part: 'lower' | 'upper'): Trigram | undefined {
   const id = part === 'lower' ? hex.hex.lower : hex.hex.upper;
   return TRIGRAMS.find((t) => t.id === id);
@@ -89,6 +92,10 @@ function formatLoveIChingReading(
     '',
     `■ 組み合わせ卦 B（相手下卦 / あなた上卦）: ${bCombined.hex.num}. ${bCombined.hex.nameJp}`,
     bCombined.hex.theme,
+    '',
+    '—',
+    '以下の文を生成 AI（ChatGPT・Claude・Gemini など）に貼り付けて、占いの結果を統合的に読み解いてもらえます。',
+    AI_PROMPT_HINT,
     '',
     '— 毎日タロット＆占い',
   ];
@@ -267,7 +274,7 @@ export function LoveIChing() {
           {phase === 'throwing-partner' && '投げています…'}
           {phase === 'done' && 'もう一度'}
         </Button>
-        {isComplete && <CopyResultButton text={readingText} />}
+        {isComplete && <CopyResultButton text={readingText} label="結果をコピー（AI 解説用）" />}
       </div>
 
       {isComplete && yourBuilt && partnerBuilt && aCombined && bCombined && (

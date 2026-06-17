@@ -25,6 +25,9 @@ import styles from './Numerology.module.css';
 type Phase = 'input' | 'calculating' | 'done';
 type ResultTab = 'lifePath' | 'personalYear';
 
+const AI_PROMPT_HINT =
+  'ライフパスナンバーとサイクルナンバーから、今年のテーマや活かし方、注意点について具体的にアドバイスしてください。';
+
 const CURRENT_YEAR = new Date().getFullYear();
 const YEAR_OPTIONS = Array.from({ length: CURRENT_YEAR - 1899 }, (_, i) => CURRENT_YEAR - i);
 const MONTH_OPTIONS = Array.from({ length: 12 }, (_, i) => i + 1);
@@ -49,6 +52,10 @@ function formatNumerologyReading(result: NumerologyResult): string {
     `■ ${result.year}年のサイクルナンバー: ${result.personalYear}（${py.title}）`,
     py.tagline,
     py.yearAdvice,
+    '',
+    '—',
+    '以下の文を生成 AI（ChatGPT・Claude・Gemini など）に貼り付けて、占いの結果を統合的に読み解いてもらえます。',
+    AI_PROMPT_HINT,
     '',
     '— 毎日タロット＆占い',
   ].join('\n');
@@ -324,7 +331,7 @@ export function Numerology() {
           )}
 
           <div class={styles.actionRow}>
-            <CopyResultButton text={readingText} />
+            <CopyResultButton text={readingText} label="結果をコピー（AI 解説用）" />
             <Button variant="ghost" onClick={handleRecalculate}>
               生年月日を変えて再計算
             </Button>

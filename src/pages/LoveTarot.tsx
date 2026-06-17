@@ -42,7 +42,10 @@ const SIDE_LABELS: Record<LoveSide, string> = {
 
 const SPREAD_POSITIONS: Position[] = ['past', 'present', 'future'];
 
-const AI_PROMPT_HINT =
+const AI_PROMPT_HINT_PAIR =
+  '上記のタロット相性占い（1 枚 × 1 枚）の結果を、共通テーマ・補完関係・緊張点を踏まえて、二人の関係性の観点から読み解いてください。';
+
+const AI_PROMPT_HINT_SPREAD =
   '上記のタロット相性占いの結果を、二人の関係性（過去の経緯・今の関係・これからの展開）の観点から統合的に読み解いてください。';
 
 function toTarotDrawn(cards: DrawnCard[]): TarotDrawn[] {
@@ -69,6 +72,10 @@ function formatPairReading(drawn: DrawnCard[]): string {
     lines.push(txt.body);
     lines.push('');
   }
+  lines.push('—');
+  lines.push('以下の文を生成 AI（ChatGPT・Claude・Gemini など）に貼り付けて、二人の関係性の解説を依頼できます。');
+  lines.push(AI_PROMPT_HINT_PAIR);
+  lines.push('');
   lines.push('— 毎日タロット＆占い');
   return lines.join('\n');
 }
@@ -90,7 +97,7 @@ function formatSpreadReading(drawn: DrawnCard[]): string {
   }
   lines.push('—');
   lines.push('以下の文を生成 AI（ChatGPT・Claude・Gemini など）に貼り付けて、二人の関係性の解説を依頼できます。');
-  lines.push(AI_PROMPT_HINT);
+  lines.push(AI_PROMPT_HINT_SPREAD);
   lines.push('');
   lines.push('— 毎日タロット＆占い');
   return lines.join('\n');
@@ -267,7 +274,7 @@ export function LoveTarot() {
           <>
             <CopyResultButton
               text={readingText}
-              label={mode === 'spread' ? '結果をコピー（AI 解説用）' : '結果をコピー'}
+              label="結果をコピー（AI 解説用）"
             />
             <Button variant="ghost" onClick={() => { setPhase('idle'); setDrawn([]); }}>
               結果を閉じる
@@ -370,7 +377,7 @@ export function LoveTarot() {
             </p>
             <p class={styles.aiHintPrompt}>
               <strong>コピーに含まれる依頼文の例：</strong>
-              {AI_PROMPT_HINT}
+              {AI_PROMPT_HINT_SPREAD}
             </p>
           </div>
 

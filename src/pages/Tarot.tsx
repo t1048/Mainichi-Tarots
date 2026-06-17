@@ -24,6 +24,9 @@ interface DrawnCard {
 
 const POSITIONS_3: NonNullable<Position>[] = ['past', 'present', 'future'];
 
+const AI_PROMPT_HINT =
+  '上記のタロット占いの結果（カード名・正逆・位置）を、総合的なメッセージとして読み解いてください。';
+
 function formatTarotReading(mode: Mode, cards: DrawnCard[]): string {
   const header = mode === 'one' ? '1 枚引き' : '3 枚スプレッド';
   const lines = ['【タロット占い】', header, ''];
@@ -37,6 +40,10 @@ function formatTarotReading(mode: Mode, cards: DrawnCard[]): string {
     lines.push(txt.body);
     lines.push('');
   }
+  lines.push('—');
+  lines.push('以下の文を生成 AI（ChatGPT・Claude・Gemini など）に貼り付けて、占いの結果を統合的に読み解いてもらえます。');
+  lines.push(AI_PROMPT_HINT);
+  lines.push('');
   lines.push('— 毎日タロット＆占い');
   return lines.join('\n');
 }
@@ -216,7 +223,7 @@ export function Tarot() {
         </Button>
         {phase === 'done' && drawn.length > 0 && (
           <>
-            <CopyResultButton text={readingText} />
+            <CopyResultButton text={readingText} label="結果をコピー（AI 解説用）" />
             <Button variant="ghost" onClick={() => { setPhase('idle'); setDrawn([]); }}>
               結果を閉じる
             </Button>

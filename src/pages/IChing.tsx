@@ -19,6 +19,9 @@ import styles from './IChing.module.css';
 
 type Phase = 'idle' | 'throwing' | 'thrown' | 'done';
 
+const AI_PROMPT_HINT =
+  '上記の本卦と変化した卦から、現在の状況と変化の方向性について、総合的な解釈をしてください。';
+
 const LINE_NAME: Record<Line, { label: string; char: string }> = {
   0: { label: '陰', char: '⚋' },
   1: { label: '陽', char: '⚊' },
@@ -46,6 +49,10 @@ function formatIChingReading(r: IChingResult): string {
       lines.push(`第${r.changedLine}の線に変化が出ました。`);
     }
   }
+  lines.push('');
+  lines.push('—');
+  lines.push('以下の文を生成 AI（ChatGPT・Claude・Gemini など）に貼り付けて、占いの結果を統合的に読み解いてもらえます。');
+  lines.push(AI_PROMPT_HINT);
   lines.push('');
   lines.push('— 毎日タロット＆占い');
   return lines.join('\n');
@@ -174,7 +181,7 @@ export function IChing() {
             ? dailyLoaded ? 'もう一度 6 回投げる（確認あり）' : 'コインを 6 回投げる'
             : '投げています…'}
         </Button>
-        {result && phase === 'done' && <CopyResultButton text={readingText} />}
+        {result && phase === 'done' && <CopyResultButton text={readingText} label="結果をコピー（AI 解説用）" />}
       </div>
 
       {result && phase === 'done' && (

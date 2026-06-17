@@ -24,6 +24,9 @@ type Phase = 'idle' | 'drawing' | 'revealing' | 'done';
 
 const POSITIONS: RunePosition[] = ['situation', 'obstacle', 'advice'];
 
+const AI_PROMPT_HINT =
+  '上記 3 つのルーン（状況・障害・助言）の結果を、全体の流れとして読み解いてください。';
+
 function drawRune(): RuneResult {
   const rune = RUNES[secureRandomInt(RUNES.length)];
   return { rune, orientation: chance(0.5) ? 'upright' : 'reversed', position: 'situation' };
@@ -50,6 +53,10 @@ function formatRuneReading(picked: RuneResult[]): string {
     lines.push(interpretRune(r));
     lines.push('');
   }
+  lines.push('—');
+  lines.push('以下の文を生成 AI（ChatGPT・Claude・Gemini など）に貼り付けて、占いの結果を統合的に読み解いてもらえます。');
+  lines.push(AI_PROMPT_HINT);
+  lines.push('');
   lines.push('— 毎日タロット＆占い');
   return lines.join('\n');
 }
@@ -158,7 +165,7 @@ export function Rune() {
             ? dailyLoaded ? 'もう一度 3 つの石を引く（確認あり）' : '3 つの石を引く'
             : phase === 'drawing' ? '石を引いています…' : '石をめくっています…'}
         </Button>
-        {phase === 'done' && results.length === 3 && <CopyResultButton text={readingText} />}
+        {phase === 'done' && results.length === 3 && <CopyResultButton text={readingText} label="結果をコピー（AI 解説用）" />}
       </div>
 
       <div class={styles.stones} aria-live="polite">
