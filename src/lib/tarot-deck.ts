@@ -1,5 +1,6 @@
 import { ALL_CARDS, findCard, type TarotCard } from '../data/tarot-meta';
 import { shuffle } from './rng';
+import { shuffleDeckOrder, type ShuffleStyle } from './tarot-shuffle';
 import { loadJSON, saveJSON } from './storage';
 
 const STORAGE_KEY = 'tarot-deck';
@@ -42,12 +43,12 @@ export function saveTarotDeck(state: TarotDeckState): void {
   saveJSON(STORAGE_KEY, state);
 }
 
-export function shuffleTarotDeck(): TarotDeckState {
+export function shuffleTarotDeck(style: ShuffleStyle = 'fan'): TarotDeckState {
   let state = loadTarotDeck();
   if (state.order.length === 0) {
     state = createFreshDeck();
   } else {
-    state = { order: shuffle(state.order) };
+    state = { order: shuffleDeckOrder(state.order, style) };
   }
   saveTarotDeck(state);
   return state;

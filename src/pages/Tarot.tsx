@@ -4,7 +4,7 @@ import { CardSlot } from '../components/CardSlot';
 import { CopyResultButton } from '../components/CopyResultButton';
 import { ResultPanel } from '../components/ResultPanel';
 import { ConfirmDialog } from '../components/ConfirmDialog';
-import { TarotDeckStack } from '../components/TarotDeckStack';
+import { TarotShuffleStage } from '../components/TarotShuffleStage';
 import { findCard, orientationLabel, POSITION_LABELS, type TarotCard, type Orientation, type Position } from '../data/tarot-meta';
 import { interpret } from '../data/templates';
 import { drawTarotOrientation } from '../lib/tarot-draw';
@@ -17,12 +17,13 @@ import { saveHistoryEntry, type TarotHistoryDetail, buildTarotSummary, newHistor
 import { saveTodayDaily, type DailyTarot } from '../lib/daily-fortune';
 import { useDailyRestore } from '../lib/use-daily-restore';
 import { useSaveOnce } from '../lib/use-save-once';
+import { getShuffleStyleOption, shuffleStyleDurationMs, useShuffleStyle } from '../lib/tarot-shuffle';
+import { shufflePageEffectClass } from '../lib/shuffle-page-effect';
 import styles from './Tarot.module.css';
 
 type Mode = 'one' | 'three';
 type Phase = 'idle' | 'deck-shuffling' | 'revealing' | 'done';
 
-const SHUFFLE_MS = 600;
 const POSITIONS_3: NonNullable<Position>[] = ['past', 'present', 'future'];
 
 interface DrawnCard {
@@ -79,6 +80,8 @@ export function Tarot() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deckRemaining, setDeckRemaining] = useState(tarotDeckRemaining);
   const [dailyRestoreSkipped, setDailyRestoreSkipped] = useState(false);
+  const [shuffleStyle, setShuffleStyle] = useShuffleStyle();
+  const shuffleOption = getShuffleStyleOption(shuffleStyle);
 
   useDailyRestore<DailyTarot, DrawnCard[]>('tarot', {
     enabled: mode === 'one' && phase === 'idle' && drawn.length === 0 && !dailyRestoreSkipped,
@@ -112,7 +115,7 @@ export function Tarot() {
 
   useEffect(() => {
     if (phase === 'deck-shuffling') {
-      const t = setTimeout(() => setPhase('idle'), SHUFFLE_MS);
+      const t = setTimeout(() => setPhase('idle'), shuffleStyleDurationMs(shuffleStyle));
       return () => clearTimeout(t);
     }
     if (phase === 'revealing') {
@@ -131,14 +134,14 @@ export function Tarot() {
       return () => clearTimeout(t);
     }
     return undefined;
-  }, [phase, drawn, mode, saveReading]);
+  }, [phase, drawn, mode, saveReading, shuffleStyle]);
 
   const handleShuffle = useCallback(() => {
     if (phase === 'deck-shuffling' || phase === 'revealing') return;
     setPhase('deck-shuffling');
-    const deck = shuffleTarotDeck();
+    const deck = shuffleTarotDeck(shuffleStyle);
     setDeckRemaining(deck.order.length);
-  }, [phase]);
+  }, [phase, shuffleStyle]);
 
   const performDraw = useCallback(() => {
     setConfirmOpen(false);
@@ -200,9 +203,10 @@ export function Tarot() {
   const dailyDrawn = dailyLoaded ? drawn[0] : null;
   const showDeck = phase === 'idle' || phase === 'deck-shuffling';
   const isShuffling = phase === 'deck-shuffling';
+  const pageEffect = shufflePageEffectClass(shuffleOption.pageEffect, isShuffling);
 
   return (
-    <article class={`${styles.page} ${isShuffling ? styles.pageShake : ''}`}>
+    <article class={`${styles.page} ${pageEffect}`}>
       <header class={styles.hero}>
         <h1>タロット占い</h1>
         <p class={styles.lede}>
@@ -234,11 +238,15 @@ export function Tarot() {
       </div>
 
       {showDeck && (
-        <section class={styles.deckStage} aria-label="山札">
-          <TarotDeckStack remaining={deckRemaining} shuffling={isShuffling} />
-          <p class={styles.deckHint}>
-            シャッフルは何度でもできます。引かずに他のページへ移動しても、山札の順番は保持されます。
-          </p>
+        <section aria-label="山札">
+          <TarotShuffleStage
+            remaining={deckRemaining}
+            shuffling={isShuffling}
+            style={shuffleStyle}
+            onStyleChange={setShuffleStyle}
+            controlsDisabled={isShuffling}
+            hint="シャッフルは何度でもできます。引かずに他のページへ移動しても、山札の順番は保持されます。"
+          />
         </section>
       )}
 
@@ -250,7 +258,7 @@ export function Tarot() {
             onClick={handleShuffle}
             loading={isShuffling}
           >
-            {isShuffling ? 'シャッフル中…' : '山札をシャッフル'}
+            {isShuffling ? `${shuffleOption.label}中…` : '山札をシャッフル'}
           </Button>
         )}
         <Button

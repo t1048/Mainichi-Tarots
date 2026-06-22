@@ -1,0 +1,29 @@
+.stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-5) var(--space-4);
+  border-radius: var(--radius-lg);
+  background: radial-gradient(ellipse at center, rgba(107, 63, 160, 0.18), transparent 72%);
+  border: 1px dashed var(--color-border);
+  width: 100%;
+}
+
+.hint {
+  margin: 0;
+  max-width: 480px;
+  text-align: center;
+  font-size: 0.82rem;
+  line-height: 1.6;
+  color: var(--color-text-muted);
+}
+
+.compact {
+  padding: var(--space-3) var(--space-3);
+  gap: var(--space-3);
+}
+
+.compact .hint {
+  font-size: 0.75rem;
+}

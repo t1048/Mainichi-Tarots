@@ -3,7 +3,9 @@ import { Button } from '../components/Button';
 import { CardSlot } from '../components/CardSlot';
 import { CopyResultButton } from '../components/CopyResultButton';
 import { ResultPanel } from '../components/ResultPanel';
+import { TarotShuffleStage } from '../components/TarotShuffleStage';
 import {
+  ALL_CARDS,
   orientationLabel,
   POSITION_LABELS,
   type TarotCard,
@@ -22,11 +24,15 @@ import {
   type TarotDrawn,
 } from '../lib/history';
 import { summarizeLoveTarotPair } from '../lib/love-tarot-summary';
+import { shufflePageEffectClass } from '../lib/shuffle-page-effect';
+import { getShuffleStyleOption, shuffleStyleDurationMs, useShuffleStyle } from '../lib/tarot-shuffle';
 import { useSaveOnce } from '../lib/use-save-once';
 import styles from './LoveTarot.module.css';
 
-type Phase = 'idle' | 'shuffling' | 'revealing' | 'done';
+type Phase = 'idle' | 'deck-shuffling' | 'revealing' | 'done';
 type LoveSide = 'you' | 'partner';
+
+const FULL_DECK_COUNT = ALL_CARDS.length;
 
 interface DrawnCard {
   card: TarotCard;
@@ -140,6 +146,8 @@ export function LoveTarot() {
   const [mode, setMode] = useState<LoveTarotMode>('pair');
   const [phase, setPhase] = useState<Phase>('idle');
   const [drawn, setDrawn] = useState<DrawnCard[]>([]);
+  const [shuffleStyle, setShuffleStyle] = useShuffleStyle();
+  const shuffleOption = getShuffleStyleOption(shuffleStyle);
 
   const { save: saveReading, reset: resetSave } = useSaveOnce<{ mode: LoveTarotMode; cards: DrawnCard[] }>(
     ({ mode: savedMode, cards }) => {
@@ -182,6 +190,14 @@ export function LoveTarot() {
     },
   );
 
+  useEffect(() => {
+    if (phase === 'deck-shuffling') {
+      const t = setTimeout(() => setPhase('idle'), shuffleStyleDurationMs(shuffleStyle));
+      return () => clearTimeout(t);
+    }
+    return undefined;
+  }, [phase, shuffleStyle]);
+
   const handleModeSwitch = (next: LoveTarotMode) => {
     if (next === mode) return;
     setMode(next);
@@ -190,16 +206,18 @@ export function LoveTarot() {
     resetSave();
   };
 
+  const handleShuffle = useCallback(() => {
+    if (phase === 'deck-shuffling' || phase === 'revealing') return;
+    setPhase('deck-shuffling');
+  }, [phase]);
+
   const startReading = useCallback(() => {
-    if (phase === 'shuffling' || phase === 'revealing') return;
+    if (phase !== 'idle' && phase !== 'done') return;
     resetSave();
     setDrawn([]);
-    setPhase('shuffling');
     const cards = drawCards(mode);
-    setTimeout(() => {
-      setDrawn(cards);
-      setPhase('revealing');
-    }, mode === 'pair' ? 700 : 900);
+    setDrawn(cards);
+    setPhase('revealing');
   }, [phase, mode, resetSave]);
 
   useEffect(() => {
@@ -222,9 +240,12 @@ export function LoveTarot() {
 
   const showBoard = (phase === 'revealing' || phase === 'done') && drawn.length === expectedCardCount(mode);
   const showResults = phase === 'done' && drawn.length === expectedCardCount(mode);
+  const showDeck = phase === 'idle' || phase === 'deck-shuffling';
+  const isShuffling = phase === 'deck-shuffling';
+  const pageEffect = shufflePageEffectClass(shuffleOption.pageEffect, isShuffling);
 
   return (
-    <article class={styles.page}>
+    <article class={`${styles.page} ${pageEffect}`}>
       <header class={styles.hero}>
         <h1>タロット相性占い</h1>
         <p class={styles.lede}>
@@ -240,6 +261,7 @@ export function LoveTarot() {
           aria-selected={mode === 'pair'}
           class={`${styles.tab} ${mode === 'pair' ? styles.tabActive : ''}`}
           onClick={() => handleModeSwitch('pair')}
+          disabled={phase === 'revealing' || isShuffling}
         >
           <span class={styles.tabMark}>Ⅱ</span>
           <span class={styles.tabText}>1 枚 × 1 枚</span>
@@ -249,26 +271,51 @@ export function LoveTarot() {
           aria-selected={mode === 'spread'}
           class={`${styles.tab} ${mode === 'spread' ? styles.tabActive : ''}`}
           onClick={() => handleModeSwitch('spread')}
+          disabled={phase === 'revealing' || isShuffling}
         >
           <span class={styles.tabMark}>Ⅵ</span>
           <span class={styles.tabText}>3 枚 × 3 枚（過去 / 現在 / 未来）</span>
         </button>
       </div>
 
+      {showDeck && (
+        <section aria-label="山札">
+          <TarotShuffleStage
+            remaining={FULL_DECK_COUNT}
+            shuffling={isShuffling}
+            style={shuffleStyle}
+            onStyleChange={setShuffleStyle}
+            controlsDisabled={isShuffling}
+            hint="シャッフルは演出です。好みの種類を選んでから、カードを引いてください。"
+          />
+        </section>
+      )}
+
       <div class={styles.action}>
+        {showDeck && (
+          <Button
+            variant="secondary"
+            size="lg"
+            onClick={handleShuffle}
+            loading={isShuffling}
+          >
+            {isShuffling ? `${shuffleOption.label}中…` : '山札をシャッフル'}
+          </Button>
+        )}
         <Button
           onClick={startReading}
           size="lg"
-          loading={phase === 'shuffling'}
-          disabled={phase === 'revealing'}
+          disabled={phase === 'revealing' || isShuffling}
         >
-          {phase === 'idle' || phase === 'done'
+          {phase === 'idle' || phase === 'deck-shuffling'
             ? mode === 'pair'
               ? '2 枚のカードを引く'
               : '6 枚のカードを引く'
-            : phase === 'shuffling'
-              ? 'シャッフル中…'
-              : 'カードを裏返しています…'}
+            : phase === 'revealing'
+              ? 'カードを裏返しています…'
+              : mode === 'pair'
+                ? '2 枚のカードを引く'
+                : '6 枚のカードを引く'}
         </Button>
         {showResults && (
           <>

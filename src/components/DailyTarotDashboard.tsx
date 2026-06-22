@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { Button } from './Button';
 import { CardSlot } from './CardSlot';
 import { ResultPanel } from './ResultPanel';
-import { findCard, orientationLabel } from '../data/tarot-meta';
+import { TarotShuffleStage } from './TarotShuffleStage';
+import { ALL_CARDS, findCard, orientationLabel } from '../data/tarot-meta';
 import { interpret } from '../data/templates';
 import { drawTarotCard, drawTarotOrientation } from '../lib/tarot-draw';
 import {
@@ -12,16 +13,22 @@ import {
   type TarotHistoryDetail,
 } from '../lib/history';
 import { loadTodayDaily, saveTodayDaily, type DailyTarot } from '../lib/daily-fortune';
+import { getShuffleStyleOption, shuffleStyleDurationMs, useShuffleStyle } from '../lib/tarot-shuffle';
 import { useSaveOnce } from '../lib/use-save-once';
 import styles from './DailyTarotDashboard.module.css';
 
 type Phase = 'idle' | 'shuffling' | 'revealing' | 'done';
 
+const FULL_DECK_COUNT = ALL_CARDS.length;
+
 export function DailyTarotDashboard() {
   const initial = loadTodayDaily<DailyTarot>('tarot');
   const [phase, setPhase] = useState<Phase>(initial ? 'done' : 'idle');
   const [drawn, setDrawn] = useState<DailyTarot | null>(initial);
+  const [shuffleStyle, setShuffleStyle] = useShuffleStyle();
+  const shuffleOption = getShuffleStyleOption(shuffleStyle);
   const isInitialFromStorage = useRef(!!initial);
+  const pendingDraw = useRef<DailyTarot | null>(null);
 
   const card = drawn ? findCard(drawn.cardId) : undefined;
 
@@ -46,7 +53,14 @@ export function DailyTarotDashboard() {
 
   useEffect(() => {
     if (phase === 'shuffling') {
-      const t = setTimeout(() => setPhase('revealing'), 600);
+      const t = setTimeout(() => {
+        const next = pendingDraw.current;
+        if (next) {
+          setDrawn(next);
+          pendingDraw.current = null;
+        }
+        setPhase('revealing');
+      }, shuffleStyleDurationMs(shuffleStyle));
       return () => clearTimeout(t);
     }
     if (phase === 'revealing') {
@@ -54,7 +68,7 @@ export function DailyTarotDashboard() {
       return () => clearTimeout(t);
     }
     return undefined;
-  }, [phase]);
+  }, [phase, shuffleStyle]);
 
   useEffect(() => {
     if (isInitialFromStorage.current) {
@@ -69,13 +83,13 @@ export function DailyTarotDashboard() {
     if (phase === 'shuffling' || phase === 'revealing') return;
     resetSave();
     setDrawn(null);
-    setPhase('shuffling');
     const next: DailyTarot = {
       cardId: drawTarotCard().id,
       orientation: drawTarotOrientation(),
     };
-    setTimeout(() => setDrawn(next), 350);
+    pendingDraw.current = next;
     saveTodayDaily<DailyTarot>('tarot', next);
+    setPhase('shuffling');
   };
 
   const interpretation = useMemo(() => {
@@ -84,6 +98,9 @@ export function DailyTarotDashboard() {
   }, [card, drawn, phase]);
 
   const revealed = phase === 'revealing' || phase === 'done';
+  const isShuffling = phase === 'shuffling';
+  const showDeck = phase === 'idle' || isShuffling;
+  const controlsDisabled = isShuffling || phase === 'revealing';
 
   return (
     <section class={styles.dashboard} aria-label="今日のワンオラクル">
@@ -92,15 +109,25 @@ export function DailyTarotDashboard() {
         <p class={styles.lede}>ホームからそのまま、今日のタロットを 1 枚引けます。</p>
       </header>
 
+      <TarotShuffleStage
+        remaining={FULL_DECK_COUNT}
+        shuffling={isShuffling}
+        style={shuffleStyle}
+        onStyleChange={setShuffleStyle}
+        controlsDisabled={controlsDisabled}
+        compact
+        showDeck={showDeck}
+      />
+
       <div class={styles.stage}>
-        {card && drawn ? (
+        {card && drawn && !showDeck ? (
           <CardSlot
             card={card}
             orientation={drawn.orientation}
             revealed={revealed}
             positionLabel="今日"
           />
-        ) : (
+        ) : showDeck ? null : (
           <div class={styles.placeholder} aria-hidden="true">
             <span class={styles.placeholderMark}>☽</span>
           </div>
@@ -111,13 +138,13 @@ export function DailyTarotDashboard() {
         <Button
           onClick={startReading}
           size="lg"
-          loading={phase === 'shuffling'}
+          loading={isShuffling}
           disabled={phase === 'revealing'}
         >
-          {phase === 'idle'
+          {phase === 'idle' || phase === 'done'
             ? '今日の運勢を占う'
-            : phase === 'shuffling'
-              ? 'シャッフル中…'
+            : isShuffling
+              ? `${shuffleOption.label}中…`
               : phase === 'revealing'
                 ? 'カードを裏返しています…'
                 : 'もう一度引く（今日の結果を更新）'}
