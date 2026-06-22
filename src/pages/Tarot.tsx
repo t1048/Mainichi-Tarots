@@ -4,9 +4,15 @@ import { CardSlot } from '../components/CardSlot';
 import { CopyResultButton } from '../components/CopyResultButton';
 import { ResultPanel } from '../components/ResultPanel';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { TarotDeckStack } from '../components/TarotDeckStack';
 import { findCard, orientationLabel, POSITION_LABELS, type TarotCard, type Orientation, type Position } from '../data/tarot-meta';
 import { interpret } from '../data/templates';
-import { drawTarotCard, drawTarotOrientation, drawUniqueTarotCards } from '../lib/tarot-draw';
+import { drawTarotOrientation } from '../lib/tarot-draw';
+import {
+  drawFromTarotDeck,
+  shuffleTarotDeck,
+  tarotDeckRemaining,
+} from '../lib/tarot-deck';
 import { saveHistoryEntry, type TarotHistoryDetail, buildTarotSummary, newHistoryId } from '../lib/history';
 import { saveTodayDaily, type DailyTarot } from '../lib/daily-fortune';
 import { useDailyRestore } from '../lib/use-daily-restore';
@@ -14,15 +20,16 @@ import { useSaveOnce } from '../lib/use-save-once';
 import styles from './Tarot.module.css';
 
 type Mode = 'one' | 'three';
-type Phase = 'idle' | 'shuffling' | 'revealing' | 'done';
+type Phase = 'idle' | 'deck-shuffling' | 'revealing' | 'done';
+
+const SHUFFLE_MS = 600;
+const POSITIONS_3: NonNullable<Position>[] = ['past', 'present', 'future'];
 
 interface DrawnCard {
   card: TarotCard;
   orientation: Orientation;
   position?: Position;
 }
-
-const POSITIONS_3: NonNullable<Position>[] = ['past', 'present', 'future'];
 
 const AI_PROMPT_HINT =
   '上記のタロット占いの結果（カード名・正逆・位置）を、総合的なメッセージとして読み解いてください。';
@@ -70,9 +77,11 @@ export function Tarot() {
   const [phase, setPhase] = useState<Phase>('idle');
   const [drawn, setDrawn] = useState<DrawnCard[]>([]);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deckRemaining, setDeckRemaining] = useState(tarotDeckRemaining);
+  const [dailyRestoreSkipped, setDailyRestoreSkipped] = useState(false);
 
   useDailyRestore<DailyTarot, DrawnCard[]>('tarot', {
-    enabled: mode === 'one' && phase === 'idle' && drawn.length === 0,
+    enabled: mode === 'one' && phase === 'idle' && drawn.length === 0 && !dailyRestoreSkipped,
     deps: [mode],
     resolve: (stored) => {
       const card = findCard(stored.cardId);
@@ -102,8 +111,8 @@ export function Tarot() {
   });
 
   useEffect(() => {
-    if (phase === 'shuffling') {
-      const t = setTimeout(() => setPhase('revealing'), 600);
+    if (phase === 'deck-shuffling') {
+      const t = setTimeout(() => setPhase('idle'), SHUFFLE_MS);
       return () => clearTimeout(t);
     }
     if (phase === 'revealing') {
@@ -124,17 +133,27 @@ export function Tarot() {
     return undefined;
   }, [phase, drawn, mode, saveReading]);
 
+  const handleShuffle = useCallback(() => {
+    if (phase === 'deck-shuffling' || phase === 'revealing') return;
+    setPhase('deck-shuffling');
+    const deck = shuffleTarotDeck();
+    setDeckRemaining(deck.order.length);
+  }, [phase]);
+
   const performDraw = useCallback(() => {
     setConfirmOpen(false);
     resetSave();
     setDrawn([]);
-    setPhase('shuffling');
+
+    const count = mode === 'one' ? 1 : 3;
+    const { cards: picked, deck } = drawFromTarotDeck(count);
+    setDeckRemaining(deck.order.length);
+
     const cards: DrawnCard[] = [];
-    if (mode === 'one') {
-      cards.push({ card: drawTarotCard(), orientation: drawTarotOrientation(), position: 'today' });
+    if (mode === 'one' && picked[0]) {
+      cards.push({ card: picked[0], orientation: drawTarotOrientation(), position: 'today' });
     } else {
-      const picked = drawUniqueTarotCards(3);
-      for (let i = 0; i < 3; i++) {
+      for (let i = 0; i < picked.length; i++) {
         cards.push({
           card: picked[i],
           orientation: drawTarotOrientation(),
@@ -142,7 +161,9 @@ export function Tarot() {
         });
       }
     }
-    setTimeout(() => setDrawn(cards), 350);
+
+    setDrawn(cards);
+    setPhase('revealing');
   }, [mode, resetSave]);
 
   const startReading = useCallback(() => {
@@ -163,7 +184,7 @@ export function Tarot() {
   };
 
   const revealState: Record<number, boolean> = useMemo(() => {
-    if (phase === 'shuffling' || phase === 'idle') return {};
+    if (phase === 'idle' || phase === 'deck-shuffling') return {};
     return drawn.reduce<Record<number, boolean>>((acc, _, i) => {
       acc[i] = true;
       return acc;
@@ -177,13 +198,15 @@ export function Tarot() {
 
   const dailyLoaded = mode === 'one' && phase === 'done' && drawn.length === 1;
   const dailyDrawn = dailyLoaded ? drawn[0] : null;
+  const showDeck = phase === 'idle' || phase === 'deck-shuffling';
+  const isShuffling = phase === 'deck-shuffling';
 
   return (
-    <article class={styles.page}>
+    <article class={`${styles.page} ${isShuffling ? styles.pageShake : ''}`}>
       <header class={styles.hero}>
         <h1>タロット占い</h1>
         <p class={styles.lede}>
-          78 枚のフルデッキ(大アルカナ 22 + 小アルカナ 56)。直感を信じて、カードを引いてみましょう。
+          78 枚のフルデッキ(大アルカナ 22 + 小アルカナ 56)。山札をシャッフルしてから、直感を信じてカードを引いてみましょう。
         </p>
       </header>
 
@@ -193,6 +216,7 @@ export function Tarot() {
           aria-selected={mode === 'one'}
           class={`${styles.tab} ${mode === 'one' ? styles.tabActive : ''}`}
           onClick={() => handleModeSwitch('one')}
+          disabled={phase === 'revealing' || isShuffling}
         >
           <span class={styles.tabMark}>Ⅰ</span>
           <span class={styles.tabText}>1 枚引き(今日のカード)</span>
@@ -202,29 +226,61 @@ export function Tarot() {
           aria-selected={mode === 'three'}
           class={`${styles.tab} ${mode === 'three' ? styles.tabActive : ''}`}
           onClick={() => handleModeSwitch('three')}
+          disabled={phase === 'revealing' || isShuffling}
         >
           <span class={styles.tabMark}>Ⅲ</span>
           <span class={styles.tabText}>3 枚スプレッド(過去 / 現在 / 未来)</span>
         </button>
       </div>
 
+      {showDeck && (
+        <section class={styles.deckStage} aria-label="山札">
+          <TarotDeckStack remaining={deckRemaining} shuffling={isShuffling} />
+          <p class={styles.deckHint}>
+            シャッフルは何度でもできます。引かずに他のページへ移動しても、山札の順番は保持されます。
+          </p>
+        </section>
+      )}
+
       <div class={styles.actionRow}>
+        {showDeck && (
+          <Button
+            variant="secondary"
+            size="lg"
+            onClick={handleShuffle}
+            loading={isShuffling}
+          >
+            {isShuffling ? 'シャッフル中…' : '山札をシャッフル'}
+          </Button>
+        )}
         <Button
           onClick={startReading}
           size="lg"
-          loading={phase === 'shuffling'}
-          disabled={phase === 'revealing'}
+          disabled={phase === 'revealing' || isShuffling}
         >
-          {phase === 'idle' || phase === 'done'
+          {phase === 'idle' || phase === 'deck-shuffling'
             ? mode === 'one'
-              ? dailyLoaded ? 'もう一度引く（確認あり）' : 'カードを 1 枚引く'
+              ? 'カードを 1 枚引く'
               : 'カードを 3 枚引く'
-            : phase === 'shuffling' ? 'シャッフル中…' : 'カードを裏返しています…'}
+            : phase === 'revealing'
+              ? 'カードを裏返しています…'
+              : mode === 'one'
+                ? dailyLoaded
+                  ? 'もう一度引く（確認あり）'
+                  : 'カードを 1 枚引く'
+                : 'カードを 3 枚引く'}
         </Button>
         {phase === 'done' && drawn.length > 0 && (
           <>
             <CopyResultButton text={readingText} label="結果をコピー（AI 解説用）" />
-            <Button variant="ghost" onClick={() => { setPhase('idle'); setDrawn([]); }}>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setDailyRestoreSkipped(true);
+                setPhase('idle');
+                setDrawn([]);
+              }}
+            >
               結果を閉じる
             </Button>
           </>
