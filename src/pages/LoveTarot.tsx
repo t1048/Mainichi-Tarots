@@ -211,10 +211,6 @@ export function LoveTarot() {
     setPhase('deck-shuffling');
   }, [phase]);
 
-  const handleShuffleDone = useCallback(() => {
-    setPhase('idle');
-  }, []);
-
   const startReading = useCallback(() => {
     if (phase !== 'idle' && phase !== 'done') return;
     resetSave();
@@ -289,24 +285,22 @@ export function LoveTarot() {
             shuffling={isShuffling}
             style={shuffleStyle}
             onStyleChange={setShuffleStyle}
-            onShuffleDone={handleShuffleDone}
             controlsDisabled={isShuffling}
             hint="シャッフルは演出です。好みの種類を選んでから、カードを引いてください。"
-          />
+          >
+            <Button
+              variant="secondary"
+              size="lg"
+              onClick={handleShuffle}
+              loading={isShuffling}
+            >
+              {isShuffling ? `${shuffleOption.label}中…` : '山札をシャッフル'}
+            </Button>
+          </TarotShuffleStage>
         </section>
       )}
 
       <div class={styles.action}>
-        {showDeck && (
-          <Button
-            variant="secondary"
-            size="lg"
-            onClick={handleShuffle}
-            loading={isShuffling}
-          >
-            {isShuffling ? `${shuffleOption.label}中…` : '山札をシャッフル'}
-          </Button>
-        )}
         <Button
           onClick={startReading}
           size="lg"

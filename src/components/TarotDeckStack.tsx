@@ -11,7 +11,7 @@ interface Props {
 const STACK_LAYER_COUNT = 10;
 const RIFFLE_PILE_COUNT = 5;
 
-const VARIANT_CLASS: Record<Exclude<ShuffleStyle, 'wash'>, string> = {
+const VARIANT_CLASS: Record<ShuffleStyle, string> = {
   fan: styles.variantFan,
   riffle: styles.variantRiffle,
   overhand: styles.variantOverhand,
@@ -29,8 +29,6 @@ function DeckLayer({ index, idPrefix }: { index: number; idPrefix: string }) {
 }
 
 export function TarotDeckStack({ remaining, shuffling = false, variant = 'fan' }: Props) {
-  if (variant === 'wash') return null;
-
   const variantClass = VARIANT_CLASS[variant];
 
   return (

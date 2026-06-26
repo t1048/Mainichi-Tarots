@@ -4,7 +4,7 @@ import { loadJSON, saveJSON } from './storage';
 
 const STORAGE_KEY = 'shuffle-style';
 
-export type ShuffleStyle = 'fan' | 'riffle' | 'overhand' | 'cascade' | 'cut' | 'swirl' | 'wash';
+export type ShuffleStyle = 'fan' | 'riffle' | 'overhand' | 'cascade' | 'cut' | 'swirl';
 
 export type PageEffectMod = 'shake' | 'nudge' | 'bounce' | 'lift' | 'swirl' | null;
 
@@ -73,15 +73,6 @@ export const SHUFFLE_STYLE_OPTIONS: readonly ShuffleStyleOption[] = [
     pageEffect: 'swirl',
     featured: false,
   },
-  {
-    id: 'wash',
-    label: 'テーブル',
-    shortDescription: 'テーブルに広げて手で混ぜるウォッシュシャッフル',
-    durationMs: 30000,
-    deckVariant: 'wash',
-    pageEffect: null,
-    featured: true,
-  },
 ] as const;
 
 const STYLE_IDS = SHUFFLE_STYLE_OPTIONS.map((o) => o.id);
@@ -101,6 +92,7 @@ export function shuffleStyleDurationMs(style: ShuffleStyle): number {
 
 export function loadShuffleStyle(): ShuffleStyle {
   const stored = loadJSON<unknown>(STORAGE_KEY, 'fan');
+  if (stored === 'wash') return 'fan';
   return isShuffleStyle(stored) ? stored : 'fan';
 }
 
@@ -181,7 +173,6 @@ export function shuffleDeckOrder<T>(order: readonly T[], style: ShuffleStyle): T
     case 'fan':
     case 'cascade':
     case 'swirl':
-    case 'wash':
     default:
       return shuffle(order);
   }

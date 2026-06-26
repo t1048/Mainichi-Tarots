@@ -143,10 +143,6 @@ export function Tarot() {
     setDeckRemaining(deck.order.length);
   }, [phase, shuffleStyle]);
 
-  const handleShuffleDone = useCallback(() => {
-    setPhase('idle');
-  }, []);
-
   const performDraw = useCallback(() => {
     setConfirmOpen(false);
     resetSave();
@@ -248,24 +244,22 @@ export function Tarot() {
             shuffling={isShuffling}
             style={shuffleStyle}
             onStyleChange={setShuffleStyle}
-            onShuffleDone={handleShuffleDone}
             controlsDisabled={isShuffling}
             hint="シャッフルは何度でもできます。引かずに他のページへ移動しても、山札の順番は保持されます。"
-          />
+          >
+            <Button
+              variant="secondary"
+              size="lg"
+              onClick={handleShuffle}
+              loading={isShuffling}
+            >
+              {isShuffling ? `${shuffleOption.label}中…` : '山札をシャッフル'}
+            </Button>
+          </TarotShuffleStage>
         </section>
       )}
 
       <div class={styles.actionRow}>
-        {showDeck && (
-          <Button
-            variant="secondary"
-            size="lg"
-            onClick={handleShuffle}
-            loading={isShuffling}
-          >
-            {isShuffling ? `${shuffleOption.label}中…` : '山札をシャッフル'}
-          </Button>
-        )}
         <Button
           onClick={startReading}
           size="lg"

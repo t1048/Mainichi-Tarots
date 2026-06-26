@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks';
+import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { Button } from './Button';
 import { CardSlot } from './CardSlot';
 import { ResultPanel } from './ResultPanel';
@@ -92,15 +92,6 @@ export function DailyTarotDashboard() {
     setPhase('shuffling');
   };
 
-  const handleShuffleDone = useCallback(() => {
-    const next = pendingDraw.current;
-    if (next) {
-      setDrawn(next);
-      pendingDraw.current = null;
-    }
-    setPhase('revealing');
-  }, []);
-
   const interpretation = useMemo(() => {
     if (!card || !drawn || phase !== 'done') return null;
     return interpret(card, drawn.orientation, 'today');
@@ -123,28 +114,10 @@ export function DailyTarotDashboard() {
         shuffling={isShuffling}
         style={shuffleStyle}
         onStyleChange={setShuffleStyle}
-        onShuffleDone={handleShuffleDone}
         controlsDisabled={controlsDisabled}
         compact
         showDeck={showDeck}
-      />
-
-      <div class={styles.stage}>
-        {card && drawn && !showDeck ? (
-          <CardSlot
-            card={card}
-            orientation={drawn.orientation}
-            revealed={revealed}
-            positionLabel="今日"
-          />
-        ) : showDeck ? null : (
-          <div class={styles.placeholder} aria-hidden="true">
-            <span class={styles.placeholderMark}>☽</span>
-          </div>
-        )}
-      </div>
-
-      <div class={styles.actions}>
+      >
         <Button
           onClick={startReading}
           size="lg"
@@ -159,12 +132,32 @@ export function DailyTarotDashboard() {
                 ? 'カードを裏返しています…'
                 : 'もう一度引く（今日の結果を更新）'}
         </Button>
-        {phase === 'done' && (
+      </TarotShuffleStage>
+
+      {!showDeck && (
+        <div class={styles.stage}>
+          {card && drawn ? (
+            <CardSlot
+              card={card}
+              orientation={drawn.orientation}
+              revealed={revealed}
+              positionLabel="今日"
+            />
+          ) : (
+            <div class={styles.placeholder} aria-hidden="true">
+              <span class={styles.placeholderMark}>☽</span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {phase === 'done' && (
+        <div class={styles.actions}>
           <a class={styles.detailLink} href="#/tarot">
             タロットページで詳しく見る
           </a>
-        )}
-      </div>
+        </div>
+      )}
 
       {phase === 'done' && card && drawn && interpretation && (
         <ResultPanel
