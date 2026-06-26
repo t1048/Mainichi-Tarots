@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { Button } from './Button';
 import { CardSlot } from './CardSlot';
 import { ResultPanel } from './ResultPanel';
@@ -92,6 +92,15 @@ export function DailyTarotDashboard() {
     setPhase('shuffling');
   };
 
+  const handleShuffleDone = useCallback(() => {
+    const next = pendingDraw.current;
+    if (next) {
+      setDrawn(next);
+      pendingDraw.current = null;
+    }
+    setPhase('revealing');
+  }, []);
+
   const interpretation = useMemo(() => {
     if (!card || !drawn || phase !== 'done') return null;
     return interpret(card, drawn.orientation, 'today');
@@ -114,6 +123,7 @@ export function DailyTarotDashboard() {
         shuffling={isShuffling}
         style={shuffleStyle}
         onStyleChange={setShuffleStyle}
+        onShuffleDone={handleShuffleDone}
         controlsDisabled={controlsDisabled}
         compact
         showDeck={showDeck}

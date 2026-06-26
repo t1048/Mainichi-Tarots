@@ -5,9 +5,20 @@
   gap: var(--space-3);
 }
 
-.stack {
+.stack,
+.leftPile,
+.rightPile {
   position: relative;
   width: 140px;
+  height: 220px;
+}
+
+.riffleWrap {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 12px;
+  width: 300px;
   height: 220px;
 }
 
@@ -18,8 +29,8 @@
   overflow: hidden;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
   transform: translate(
-    calc(var(--layer) * 1.5px),
-    calc(var(--layer) * -2px)
+    calc(var(--layer) * 1.2px),
+    calc(var(--layer) * -1.8px)
   );
   transition: transform var(--dur-fast) var(--ease-out);
 }
@@ -48,12 +59,9 @@
   animation: fanStack 0.55s var(--ease-out);
 }
 
-.variantFan.shuffling .layer:nth-child(odd) {
-  animation: fanLayerOdd 0.55s var(--ease-out);
-}
-
-.variantFan.shuffling .layer:nth-child(even) {
-  animation: fanLayerEven 0.55s var(--ease-out);
+.variantFan.shuffling .layer {
+  animation: fanLayerSpread 0.55s var(--ease-out);
+  animation-delay: calc(var(--layer) * 18ms);
 }
 
 @keyframes fanStack {
@@ -61,94 +69,121 @@
   100% {
     transform: rotate(0deg) scale(1);
   }
-  20% {
-    transform: rotate(-4deg) scale(1.02);
+  35% {
+    transform: rotate(-2deg) scale(1.03);
   }
-  40% {
-    transform: rotate(5deg) scale(0.98);
-  }
-  60% {
-    transform: rotate(-3deg) scale(1.01);
-  }
-  80% {
-    transform: rotate(2deg) scale(1);
+  65% {
+    transform: rotate(2deg) scale(1.01);
   }
 }
 
-@keyframes fanLayerOdd {
+@keyframes fanLayerSpread {
   0%,
   100% {
-    transform: translate(calc(var(--layer) * 1.5px), calc(var(--layer) * -2px));
+    transform: translate(calc(var(--layer) * 1.2px), calc(var(--layer) * -1.8px)) rotate(0deg);
   }
-  50% {
-    transform: translate(calc(var(--layer) * 1.5px + 6px), calc(var(--layer) * -2px - 4px))
-      rotate(3deg);
-  }
-}
-
-@keyframes fanLayerEven {
-  0%,
-  100% {
-    transform: translate(calc(var(--layer) * 1.5px), calc(var(--layer) * -2px));
-  }
-  50% {
-    transform: translate(calc(var(--layer) * 1.5px - 6px), calc(var(--layer) * -2px - 4px))
-      rotate(-3deg);
+  45% {
+    transform: translate(
+        calc(var(--layer) * 1.2px + (var(--layer) - 4.5) * 14px),
+        calc(var(--layer) * -1.8px - 18px)
+      )
+      rotate(calc((var(--layer) - 4.5) * 7deg));
+    opacity: 0.92;
   }
 }
 
 /* --- riffle --- */
-.variantRiffle.shuffling .stack {
-  animation: riffleStack 0.65s var(--ease-out);
+.variantRiffle.shuffling .riffleWrap {
+  animation: riffleWrap 0.65s var(--ease-out);
 }
 
-.variantRiffle.shuffling .layer:nth-child(odd) {
-  animation: riffleLeft 0.65s var(--ease-out);
+.variantRiffle.shuffling .leftPile {
+  animation: riffleLeftPile 0.65s var(--ease-out);
 }
 
-.variantRiffle.shuffling .layer:nth-child(even) {
-  animation: riffleRight 0.65s var(--ease-out);
+.variantRiffle.shuffling .rightPile {
+  animation: riffleRightPile 0.65s var(--ease-out);
 }
 
-@keyframes riffleStack {
+.variantRiffle.shuffling .leftPile .layer {
+  animation: riffleLeftLayer 0.65s var(--ease-out);
+  animation-delay: calc(var(--layer) * 30ms);
+}
+
+.variantRiffle.shuffling .rightPile .layer {
+  animation: riffleRightLayer 0.65s var(--ease-out);
+  animation-delay: calc(var(--layer) * 30ms);
+}
+
+@keyframes riffleWrap {
   0%,
   100% {
-    transform: translateX(0);
-  }
-  25% {
-    transform: translateX(-8px) rotate(-2deg);
+    transform: scale(1);
   }
   50% {
-    transform: translateX(0) scale(0.98);
+    transform: scale(0.96);
+  }
+}
+
+@keyframes riffleLeftPile {
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  25% {
+    transform: translate(-28px, -24px) rotate(-8deg);
+  }
+  50% {
+    transform: translate(-6px, -8px) rotate(-2deg);
   }
   75% {
-    transform: translateX(8px) rotate(2deg);
+    transform: translate(4px, 2px) rotate(1deg);
   }
 }
 
-@keyframes riffleLeft {
+@keyframes riffleRightPile {
   0%,
   100% {
-    transform: translate(calc(var(--layer) * 1.5px), calc(var(--layer) * -2px));
+    transform: translate(0, 0) rotate(0deg);
   }
-  35% {
-    transform: translate(calc(var(--layer) * 1.5px - 18px), calc(var(--layer) * -2px)) rotate(-6deg);
+  25% {
+    transform: translate(28px, -24px) rotate(8deg);
   }
-  65% {
-    transform: translate(calc(var(--layer) * 1.5px + 2px), calc(var(--layer) * -2px - 2px));
+  50% {
+    transform: translate(6px, -8px) rotate(2deg);
+  }
+  75% {
+    transform: translate(-4px, 2px) rotate(-1deg);
   }
 }
 
-@keyframes riffleRight {
+@keyframes riffleLeftLayer {
   0%,
   100% {
-    transform: translate(calc(var(--layer) * 1.5px), calc(var(--layer) * -2px));
+    transform: translate(calc(var(--layer) * 1.2px), calc(var(--layer) * -1.8px));
   }
-  35% {
-    transform: translate(calc(var(--layer) * 1.5px + 18px), calc(var(--layer) * -2px)) rotate(6deg);
+  40% {
+    transform: translate(calc(var(--layer) * 1.2px + 8px), calc(var(--layer) * -1.8px + 6px))
+      rotate(4deg);
   }
-  65% {
-    transform: translate(calc(var(--layer) * 1.5px - 2px), calc(var(--layer) * -2px - 2px));
+  60% {
+    transform: translate(calc(var(--layer) * 1.2px - 2px), calc(var(--layer) * -1.8px - 4px))
+      rotate(-2deg);
+  }
+}
+
+@keyframes riffleRightLayer {
+  0%,
+  100% {
+    transform: translate(calc(var(--layer) * 1.2px), calc(var(--layer) * -1.8px));
+  }
+  40% {
+    transform: translate(calc(var(--layer) * 1.2px - 8px), calc(var(--layer) * -1.8px + 6px))
+      rotate(-4deg);
+  }
+  60% {
+    transform: translate(calc(var(--layer) * 1.2px + 2px), calc(var(--layer) * -1.8px - 4px))
+      rotate(2deg);
   }
 }
 
@@ -159,7 +194,7 @@
 
 .variantOverhand.shuffling .layer {
   animation: overhandLayer 0.75s var(--ease-out);
-  animation-delay: calc(var(--layer) * 55ms);
+  animation-delay: calc(var(--layer) * 45ms);
 }
 
 @keyframes overhandStack {
@@ -167,23 +202,33 @@
   100% {
     transform: translateY(0);
   }
-  40% {
-    transform: translateY(-6px);
+  35% {
+    transform: translateY(-10px);
   }
 }
 
 @keyframes overhandLayer {
   0%,
   100% {
-    transform: translate(calc(var(--layer) * 1.5px), calc(var(--layer) * -2px));
+    transform: translate(calc(var(--layer) * 1.2px), calc(var(--layer) * -1.8px)) rotate(0deg);
   }
-  30% {
-    transform: translate(calc(var(--layer) * 1.5px + 10px), calc(var(--layer) * -2px + 12px))
-      rotate(4deg);
+  25% {
+    transform: translate(
+        calc(var(--layer) * 1.2px + 16px),
+        calc(var(--layer) * -1.8px - 42px)
+      )
+      rotate(-10deg);
   }
-  60% {
-    transform: translate(calc(var(--layer) * 1.5px - 4px), calc(var(--layer) * -2px - 6px))
-      rotate(-2deg);
+  55% {
+    transform: translate(
+        calc(var(--layer) * 1.2px - 6px),
+        calc(var(--layer) * -1.8px + 8px)
+      )
+      rotate(5deg);
+  }
+  75% {
+    transform: translate(calc(var(--layer) * 1.2px + 2px), calc(var(--layer) * -1.8px - 4px))
+      rotate(-3deg);
   }
 }
 
@@ -194,7 +239,7 @@
 
 .variantCascade.shuffling .layer {
   animation: cascadeLayer 0.6s var(--ease-out);
-  animation-delay: calc((4 - var(--layer)) * 40ms);
+  animation-delay: calc((9 - var(--layer)) * 35ms);
 }
 
 @keyframes cascadeStack {
@@ -203,19 +248,31 @@
     transform: scale(1);
   }
   50% {
-    transform: scale(0.97);
+    transform: scale(0.95);
   }
 }
 
 @keyframes cascadeLayer {
   0%,
   100% {
-    transform: translate(calc(var(--layer) * 1.5px), calc(var(--layer) * -2px));
+    transform: translate(calc(var(--layer) * 1.2px), calc(var(--layer) * -1.8px)) rotate(0deg);
     opacity: 1;
   }
-  45% {
-    transform: translate(calc(var(--layer) * 1.5px), calc(var(--layer) * -2px + 16px));
-    opacity: 0.85;
+  40% {
+    transform: translate(
+        calc(var(--layer) * 1.2px + (var(--layer) - 4.5) * 6px),
+        calc(var(--layer) * -1.8px + 28px)
+      )
+      rotate(calc((var(--layer) - 4.5) * 4deg));
+    opacity: 0.8;
+  }
+  65% {
+    transform: translate(
+        calc(var(--layer) * 1.2px - (var(--layer) - 4.5) * 3px),
+        calc(var(--layer) * -1.8px + 12px)
+      )
+      rotate(calc((var(--layer) - 4.5) * -2deg));
+    opacity: 0.9;
   }
 }
 
@@ -224,12 +281,14 @@
   animation: cutStack 0.6s var(--ease-out);
 }
 
-.variantCut.shuffling .layer:nth-child(-n + 2) {
+.variantCut.shuffling .layer:nth-child(-n + 5) {
   animation: cutTop 0.6s var(--ease-out);
+  animation-delay: calc(var(--layer) * 20ms);
 }
 
-.variantCut.shuffling .layer:nth-child(n + 3) {
+.variantCut.shuffling .layer:nth-child(n + 6) {
   animation: cutBottom 0.6s var(--ease-out);
+  animation-delay: calc((var(--layer) - 5) * 20ms);
 }
 
 @keyframes cutStack {
@@ -238,35 +297,39 @@
     transform: translateY(0);
   }
   30% {
-    transform: translateY(-12px);
+    transform: translateY(-8px);
   }
 }
 
 @keyframes cutTop {
   0%,
   100% {
-    transform: translate(calc(var(--layer) * 1.5px), calc(var(--layer) * -2px));
+    transform: translate(calc(var(--layer) * 1.2px), calc(var(--layer) * -1.8px)) rotate(0deg);
+    z-index: calc(10 + var(--layer));
   }
-  40% {
-    transform: translate(calc(var(--layer) * 1.5px - 8px), calc(var(--layer) * -2px - 14px))
-      rotate(-5deg);
+  35% {
+    transform: translate(calc(var(--layer) * 1.2px - 12px), calc(var(--layer) * -1.8px - 50px))
+      rotate(-12deg);
+    z-index: calc(20 + var(--layer));
   }
-  70% {
-    transform: translate(calc(var(--layer) * 1.5px), calc(var(--layer) * -2px));
+  65% {
+    transform: translate(calc(var(--layer) * 1.2px + 4px), calc(var(--layer) * -1.8px - 8px))
+      rotate(3deg);
   }
 }
 
 @keyframes cutBottom {
   0%,
   100% {
-    transform: translate(calc(var(--layer) * 1.5px), calc(var(--layer) * -2px));
+    transform: translate(calc(var(--layer) * 1.2px), calc(var(--layer) * -1.8px)) rotate(0deg);
   }
-  40% {
-    transform: translate(calc(var(--layer) * 1.5px + 8px), calc(var(--layer) * -2px + 10px))
-      rotate(4deg);
+  35% {
+    transform: translate(calc(var(--layer) * 1.2px + 14px), calc(var(--layer) * -1.8px + 18px))
+      rotate(8deg) scale(1.02);
   }
-  70% {
-    transform: translate(calc(var(--layer) * 1.5px), calc(var(--layer) * -2px));
+  65% {
+    transform: translate(calc(var(--layer) * 1.2px - 2px), calc(var(--layer) * -1.8px + 4px))
+      rotate(-2deg);
   }
 }
 
@@ -277,7 +340,7 @@
 
 .variantSwirl.shuffling .layer {
   animation: swirlLayer 0.7s var(--ease-out);
-  animation-delay: calc(var(--layer) * 25ms);
+  animation-delay: calc(var(--layer) * 22ms);
 }
 
 @keyframes swirlStack {
@@ -286,24 +349,37 @@
     transform: rotate(0deg) scale(1);
   }
   50% {
-    transform: rotate(180deg) scale(0.94);
+    transform: rotate(90deg) scale(0.92);
   }
 }
 
 @keyframes swirlLayer {
   0%,
   100% {
-    transform: translate(calc(var(--layer) * 1.5px), calc(var(--layer) * -2px)) rotate(0deg);
+    transform: translate(calc(var(--layer) * 1.2px), calc(var(--layer) * -1.8px)) rotate(0deg);
   }
-  50% {
-    transform: translate(calc(var(--layer) * 1.5px + 3px), calc(var(--layer) * -2px - 3px))
-      rotate(8deg);
+  35% {
+    transform: translate(
+        calc(var(--layer) * 1.2px + (var(--layer) - 4.5) * 10px),
+        calc(var(--layer) * -1.8px - (var(--layer) - 4.5) * 6px)
+      )
+      rotate(calc((var(--layer) - 4.5) * 18deg));
+  }
+  65% {
+    transform: translate(
+        calc(var(--layer) * 1.2px - (var(--layer) - 4.5) * 5px),
+        calc(var(--layer) * -1.8px + (var(--layer) - 4.5) * 4px)
+      )
+      rotate(calc((var(--layer) - 4.5) * -10deg));
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .shuffling .stack,
-  .shuffling .layer {
+  .shuffling .layer,
+  .shuffling .riffleWrap,
+  .shuffling .leftPile,
+  .shuffling .rightPile {
     animation: none !important;
     animation-delay: 0ms !important;
   }

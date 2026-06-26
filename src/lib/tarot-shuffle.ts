@@ -4,7 +4,7 @@ import { loadJSON, saveJSON } from './storage';
 
 const STORAGE_KEY = 'shuffle-style';
 
-export type ShuffleStyle = 'fan' | 'riffle' | 'overhand' | 'cascade' | 'cut' | 'swirl';
+export type ShuffleStyle = 'fan' | 'riffle' | 'overhand' | 'cascade' | 'cut' | 'swirl' | 'wash';
 
 export type PageEffectMod = 'shake' | 'nudge' | 'bounce' | 'lift' | 'swirl' | null;
 
@@ -15,6 +15,7 @@ export interface ShuffleStyleOption {
   durationMs: number;
   deckVariant: ShuffleStyle;
   pageEffect: PageEffectMod;
+  featured: boolean;
 }
 
 export const SHUFFLE_STYLE_OPTIONS: readonly ShuffleStyleOption[] = [
@@ -25,6 +26,7 @@ export const SHUFFLE_STYLE_OPTIONS: readonly ShuffleStyleOption[] = [
     durationMs: 550,
     deckVariant: 'fan',
     pageEffect: 'shake',
+    featured: false,
   },
   {
     id: 'riffle',
@@ -33,6 +35,7 @@ export const SHUFFLE_STYLE_OPTIONS: readonly ShuffleStyleOption[] = [
     durationMs: 650,
     deckVariant: 'riffle',
     pageEffect: 'nudge',
+    featured: true,
   },
   {
     id: 'overhand',
@@ -41,6 +44,7 @@ export const SHUFFLE_STYLE_OPTIONS: readonly ShuffleStyleOption[] = [
     durationMs: 750,
     deckVariant: 'overhand',
     pageEffect: 'shake',
+    featured: true,
   },
   {
     id: 'cascade',
@@ -49,6 +53,7 @@ export const SHUFFLE_STYLE_OPTIONS: readonly ShuffleStyleOption[] = [
     durationMs: 600,
     deckVariant: 'cascade',
     pageEffect: 'bounce',
+    featured: false,
   },
   {
     id: 'cut',
@@ -57,6 +62,7 @@ export const SHUFFLE_STYLE_OPTIONS: readonly ShuffleStyleOption[] = [
     durationMs: 600,
     deckVariant: 'cut',
     pageEffect: 'lift',
+    featured: false,
   },
   {
     id: 'swirl',
@@ -65,6 +71,16 @@ export const SHUFFLE_STYLE_OPTIONS: readonly ShuffleStyleOption[] = [
     durationMs: 700,
     deckVariant: 'swirl',
     pageEffect: 'swirl',
+    featured: false,
+  },
+  {
+    id: 'wash',
+    label: 'テーブル',
+    shortDescription: 'テーブルに広げて手で混ぜるウォッシュシャッフル',
+    durationMs: 30000,
+    deckVariant: 'wash',
+    pageEffect: null,
+    featured: true,
   },
 ] as const;
 
@@ -165,6 +181,7 @@ export function shuffleDeckOrder<T>(order: readonly T[], style: ShuffleStyle): T
     case 'fan':
     case 'cascade':
     case 'swirl':
+    case 'wash':
     default:
       return shuffle(order);
   }

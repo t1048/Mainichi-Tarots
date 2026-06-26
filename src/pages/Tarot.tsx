@@ -143,6 +143,10 @@ export function Tarot() {
     setDeckRemaining(deck.order.length);
   }, [phase, shuffleStyle]);
 
+  const handleShuffleDone = useCallback(() => {
+    setPhase('idle');
+  }, []);
+
   const performDraw = useCallback(() => {
     setConfirmOpen(false);
     resetSave();
@@ -244,6 +248,7 @@ export function Tarot() {
             shuffling={isShuffling}
             style={shuffleStyle}
             onStyleChange={setShuffleStyle}
+            onShuffleDone={handleShuffleDone}
             controlsDisabled={isShuffling}
             hint="シャッフルは何度でもできます。引かずに他のページへ移動しても、山札の順番は保持されます。"
           />

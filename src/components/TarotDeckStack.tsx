@@ -8,9 +8,10 @@ interface Props {
   variant?: ShuffleStyle;
 }
 
-const LAYER_COUNT = 5;
+const STACK_LAYER_COUNT = 10;
+const RIFFLE_PILE_COUNT = 5;
 
-const VARIANT_CLASS: Record<ShuffleStyle, string> = {
+const VARIANT_CLASS: Record<Exclude<ShuffleStyle, 'wash'>, string> = {
   fan: styles.variantFan,
   riffle: styles.variantRiffle,
   overhand: styles.variantOverhand,
@@ -19,7 +20,17 @@ const VARIANT_CLASS: Record<ShuffleStyle, string> = {
   swirl: styles.variantSwirl,
 };
 
+function DeckLayer({ index, idPrefix }: { index: number; idPrefix: string }) {
+  return (
+    <div class={styles.layer} style={{ ['--layer' as string]: index }}>
+      <CardBackSvg cardId={`${idPrefix}-${index}`} />
+    </div>
+  );
+}
+
 export function TarotDeckStack({ remaining, shuffling = false, variant = 'fan' }: Props) {
+  if (variant === 'wash') return null;
+
   const variantClass = VARIANT_CLASS[variant];
 
   return (
@@ -27,13 +38,26 @@ export function TarotDeckStack({ remaining, shuffling = false, variant = 'fan' }
       class={`${styles.wrap} ${shuffling ? styles.shuffling : ''} ${variantClass}`}
       aria-label={`山札 残り ${remaining} 枚`}
     >
-      <div class={styles.stack} aria-hidden="true">
-        {Array.from({ length: LAYER_COUNT }, (_, i) => (
-          <div key={i} class={styles.layer} style={{ ['--layer' as string]: i }}>
-            <CardBackSvg cardId={`deck-layer-${i}`} />
+      {variant === 'riffle' ? (
+        <div class={styles.riffleWrap} aria-hidden="true">
+          <div class={styles.leftPile}>
+            {Array.from({ length: RIFFLE_PILE_COUNT }, (_, i) => (
+              <DeckLayer key={`l-${i}`} index={i} idPrefix="deck-left" />
+            ))}
           </div>
-        ))}
-      </div>
+          <div class={styles.rightPile}>
+            {Array.from({ length: RIFFLE_PILE_COUNT }, (_, i) => (
+              <DeckLayer key={`r-${i}`} index={i} idPrefix="deck-right" />
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div class={styles.stack} aria-hidden="true">
+          {Array.from({ length: STACK_LAYER_COUNT }, (_, i) => (
+            <DeckLayer key={i} index={i} idPrefix="deck-layer" />
+          ))}
+        </div>
+      )}
       <p class={styles.caption}>
         山札 <strong>{remaining}</strong> 枚
       </p>
