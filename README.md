@@ -3,7 +3,7 @@
 ブラウザだけで遊べる、4 種類の占いを集めたシングルページアプリケーション（SPA）です。
 GitHub Pages にデプロイすれば、URL を開くだけですぐに遊べます。
 
-- 公開 URL : `https://t1048.github.io/Mainichi-Tarots`
+- 公開 URL : [https://t1048.github.io/Mainichi-Tarots](https://t1048.github.io/Mainichi-Tarots)
 
 ## 含まれる占い
 

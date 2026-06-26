@@ -2,9 +2,10 @@
 
 ## Project
 
-`mainichi-tarots` — Japanese-language single-page app with 5 fortune-telling menus:
-タロット / ルーン / おみくじ / 周易, plus 恋愛・相性 (compatibility: タロット + 周易).
-Static SPA, no backend, no external network calls at runtime, history persisted to `localStorage`.
+`mainichi-tarots` — Japanese-language single-page app with fortune-telling menus:
+タロット / ルーン / おみくじ / 周易 / 数秘術, plus 恋愛・相性 (タロット相性占い + 二人の周易).
+Home shows a daily one-card tarot dashboard (`DailyTarotDashboard`).
+Static SPA, no backend, no external network calls at runtime; state persisted to `localStorage`.
 Deployed to GitHub Pages at `https://t1048.github.io/Mainichi-Tarots/`.
 
 ## Stack (do not introduce alternatives)
@@ -27,41 +28,46 @@ There is no `lint`, no `test`, no single-test command. Do not fabricate one.
 ## Layout
 
 - `src/main.tsx` → mounts `<App />` into `#app`, calls `registerSW({ immediate: true })`
-- `src/app.tsx` — `<HashLocationProvider>` + `<Router>`; registers 7 routes:
-  `/`, `/tarot`, `/rune`, `/omikuji`, `/iching`, `/love`, `/love/tarot`, `/love/iching`,
-  default `<NotFound>`.
-- `src/pages/` — `Home`, `Tarot`, `Rune`, `Omikuji`, `IChing`, `LoveHome`, `LoveTarot`, `LoveIChing`, `NotFound` (each ships a colocated `.module.css`)
-- `src/components/` — `Layout`, `Button`, `CardSlot`, `ResultPanel`, `RuneStone`, `TarotCard`, `HistoryModal`
+- `src/app.tsx` — `<HashLocationProvider>` + `<Router>`; registers 8 routes:
+  `/`, `/tarot`, `/rune`, `/omikuji`, `/iching`, `/numerology`, `/love/tarot`, `/love/iching`,
+  default `<NotFound>`. (No `/love` hub — love pages are linked from Home nav cards.)
+- `src/pages/` — `Home`, `Tarot`, `Rune`, `Omikuji`, `IChing`, `Numerology`, `LoveTarot`, `LoveIChing`, `NotFound` (each ships a colocated `.module.css`)
+- `src/components/` — `Layout`, `Button`, `CardSlot`, `ResultPanel`, `RuneStone`, `TarotCard`, `HistoryModal`, `CopyResultButton`, `ConfirmDialog`, `DailyTarotDashboard`, `TarotShuffleStage`, `TarotDeckStack`, `ShuffleStylePicker`
   - `src/components/tarot/` — SVG glyph/pip layouts for the 78 tarot cards
 - `src/lib/`
   - `rng.ts` — Fisher–Yates via `crypto.getRandomValues` (rejection sampling); `chance(0.5)` rolls 正/逆
   - `storage.ts` — `localStorage` wrapper, key prefix `mainichi-tarots:v1:`
-  - `hash-location.tsx` — custom router context (see Quirks)
-  - `history.ts` — per-`FortuneKind` history with 14-day retention, old tarot entries auto-migrated to the unified shape
-  - `format.ts` — JP date/time/romanize helpers
+  - `hash-location.tsx` — custom hash router context (see Quirks)
+  - `history.ts` — per-`FortuneKind` history with 14-day retention, old tarot entries auto-migrated
+  - `daily-fortune.ts` — per-day snapshots for Home daily draws (`daily-tarot`, `daily-rune`, etc.)
+  - `tarot-deck.ts` / `tarot-draw.ts` / `tarot-shuffle.ts` — persistent deck order, draw helpers, shuffle styles
+  - `use-save-once.ts` / `use-daily-restore.ts` — save-once and daily-restore hooks
+  - `format.ts`, `copy.ts`, `iching-toss.ts`, `love-tarot-summary.ts`, `shuffle-page-effect.ts`
 - `src/data/`
   - `tarot-major.json` + `tarot-minor.json` = 78 cards (loaded by `tarot-meta.ts`)
-  - `runes.json`, `iching.json`, `omikuji.json` (with thin `-meta.ts` wrappers)
+  - `runes.json`, `iching.json`, `omikuji.json`, `numerology.json` (with thin `-meta.ts` wrappers)
   - `templates.ts` — tarot interpretation text builder (used by `Tarot.tsx`, `LoveTarot.tsx`)
 - `scripts/` — empty placeholder directory, ignore
 
 ## Quirks / things an agent will get wrong without this
 
 - **Custom hash router.** `src/lib/hash-location.tsx` monkey-patches `preact-iso`'s `LocationProvider` context so all `<a href="#/...">` links work as SPA routes. Routes are hash-based on purpose (GitHub Pages subpath). Don't replace it with `BrowserRouter` or change link `href` formats without also revisiting `Layout.tsx`.
-- **Debug beacon in production code.** `src/lib/hash-location.tsx` contains a `// #region agent log` block that `fetch`es `http://127.0.0.1:7597/ingest/...` on every route change. This is leftover instrumentation, not a feature. Remove it when touching this file, and never add similar dev-only network calls to shipped code.
-- **localStorage key prefix.** `src/lib/storage.ts` uses `mainichi-tarots:v1:`. Changing the prefix silently invalidates user history; if you bump it, write a migration, don't just rename.
-- **History retention is 14 days, not a count cap.** `src/lib/history.ts` `RETENTION_DAYS = 14`; `loadHistoryEntries` trims and re-saves on read. The README's "30 件" line is stale — code wins.
+- **localStorage key prefix.** `src/lib/storage.ts` uses `mainichi-tarots:v1:`. Changing the prefix silently invalidates user data; if you bump it, write a migration, don't just rename.
+- **History retention is 14 days, not a count cap.** `src/lib/history.ts` `RETENTION_DAYS = 14`; `loadHistoryEntries` trims and re-saves on read.
 - **Old tarot history auto-migrates.** `isOldTarotEntry` / `migrateTarotEntries` in `src/lib/history.ts` convert pre-`kind` tarot entries into the unified `BaseHistoryEntry` shape on first read. Don't remove this branch even if no old data exists in dev.
+- **Daily fortune is separate from history.** `daily-fortune.ts` stores one result per calendar day (`daily-tarot`, `daily-rune`, `daily-omikuji`, `daily-iching`) for Home restore. Old flat `daily-tarot` objects are auto-migrated to `{ date, payload }` envelope on read.
+- **Persistent tarot deck.** `tarot-deck.ts` keeps a shuffled 78-card order in `tarot-deck`; draws consume from the top. `shuffle-style` stores the user's shuffle animation preference. Don't reset these casually — users expect continuity across sessions.
 - **Vite `base: './'`.** Required for GitHub Pages subpath deployment. Don't switch to `'/'` unless the deploy target also changes.
 - **PWA manifest `start_url` / `scope` are hardcoded** to `/Mainichi-Tarots/` in `vite.config.ts`. If the repo is renamed or deployed elsewhere, both paths and `vite.config.ts` `base` must be updated together.
 - **`tsc -b` in the build script.** `tsconfig.json` is a single file with no `references`; the `-b` is harmless but misleading. Treat `npm run typecheck` as the source of truth for type errors.
 - **`virtual:pwa-register` typings come from `tsconfig.json` `types: ["vite-plugin-pwa/client"]`.** Don't drop that entry or `main.tsx` stops type-checking.
-- **Static data lives in JSON.** Card / rune / hexagram content is in `src/data/*.json` and re-exported via `*-meta.ts`. Add or edit content there, not in TS source.
-- **All randomness is secure.** `src/lib/rng.ts` uses `crypto.getRandomValues` with rejection sampling; do not substitute `Math.random()` in pages. `chance(0.5)` is how orientation (正/逆) is rolled.
+- **Static data lives in JSON.** Card / rune / hexagram / numerology content is in `src/data/*.json` and re-exported via `*-meta.ts`. Add or edit content there, not in TS source.
+- **Fortune randomness uses `rng.ts`.** `secureRandomInt` / `shuffle` / `chance` prefer `crypto.getRandomValues`; do not substitute `Math.random()` in draw logic. (`history.ts` uses `Math.random` only for non-security history IDs; `rng.ts` falls back to `Math.random` only when `crypto` is unavailable.)
 - **No image assets.** Cards, runes, and hexagrams are all inline SVG. Do not add raster images to `public/`.
-- **Reduced motion.** The site must continue to function when `prefers-reduced-motion: reduce` is set; CSS in `src/styles/` already handles the disabling, but don't introduce new animations without honoring it.
+- **Reduced motion.** The site must continue to function when `prefers-reduced-motion: reduce` is set; CSS in `src/styles/` and component modules already handle disabling — honor it for new animations.
 - **TS strictness.** Unused locals / parameters fail typecheck. Clean up dead code rather than `_`-prefixing without thought.
 - **Japanese UI strings.** User-facing copy is Japanese; keep new copy in Japanese to match the existing voice.
+- **README is partially stale.** It still says "4 種類" and omits numerology / new components — code wins.
 
 ## Deploy / CI
 
@@ -74,7 +80,8 @@ There is no `lint`, no `test`, no single-test command. Do not fabricate one.
 - CSS Modules import as `import styles from './X.module.css'`; class names composed via template strings.
 - No state library — local `useState` / `useReducer` / `useRef` only.
 - Persisted state goes through `loadJSON` / `saveJSON` in `src/lib/storage.ts`; do not touch `localStorage` directly.
-- A "save once per reading" pattern is enforced with `useRef(false)` flags in pages (e.g. `IChing.tsx`, `LoveTarot.tsx`, `LoveIChing.tsx`) — don't replace these with a plain boolean state, the effect re-fires and you'd double-save.
+- **Save once per reading** via `useSaveOnce` from `src/lib/use-save-once.ts` (used in all fortune pages and `DailyTarotDashboard`). Call `reset()` when starting a new draw — don't replace with plain boolean state or the effect re-fires and double-saves.
+- **Daily restore on mount** via `useDailyRestore` where pages need to reload today's saved draw.
 
 ## Cursor Cloud specific instructions
 

@@ -13,6 +13,7 @@ interface Props {
   hint?: string;
   compact?: boolean;
   showDeck?: boolean;
+  controlsPosition?: 'above' | 'below';
   children?: ComponentChildren;
 }
 
@@ -25,8 +26,11 @@ export function TarotShuffleStage({
   hint,
   compact = false,
   showDeck = true,
+  controlsPosition = 'above',
   children,
 }: Props) {
+  const controls = children && <div class={styles.controls}>{children}</div>;
+
   return (
     <div class={`${styles.stage} ${compact ? styles.compact : ''}`}>
       <ShuffleStylePicker
@@ -35,10 +39,11 @@ export function TarotShuffleStage({
         disabled={controlsDisabled}
         compact={compact}
       />
-      {children && <div class={styles.controls}>{children}</div>}
+      {controlsPosition === 'above' && controls}
       {showDeck && (
         <TarotDeckStack remaining={remaining} shuffling={shuffling} variant={style} />
       )}
+      {controlsPosition === 'below' && controls}
       {hint && <p class={styles.hint}>{hint}</p>}
     </div>
   );
