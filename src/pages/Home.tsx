@@ -31,7 +31,7 @@ const NAV_CARDS: NavCard[] = [
     href: '/omikuji',
     title: 'おみくじ',
     icon: '⛩',
-    desc: '大吉 〜 大凶の 7 段階。願い事・健康・金運など 11 カテゴリから運勢を引く。',
+    desc: '大吉 〜 大凶の 7 段階。願い事・健康・金運など 11 カテゴリの運勢を引く。',
     accent: 'rose',
   },
   {
