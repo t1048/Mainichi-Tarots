@@ -119,17 +119,16 @@ export function DailyTarotDashboard() {
         <p class={styles.lede}>ホームからそのまま、今日のタロットを 1 枚引けます。</p>
       </header>
 
-      <TarotShuffleStage
-        remaining={deckRemaining}
-        shuffling={isShuffling}
-        style={shuffleStyle}
-        onStyleChange={setShuffleStyle}
-        controlsDisabled={controlsDisabled}
-        controlsPosition="below"
-        compact
-        showDeck={showDeck}
-      >
-        {showDeck && (
+      {showDeck && (
+        <TarotShuffleStage
+          remaining={deckRemaining}
+          shuffling={isShuffling}
+          style={shuffleStyle}
+          onStyleChange={setShuffleStyle}
+          controlsDisabled={controlsDisabled}
+          controlsPosition="below"
+          compact
+        >
           <Button
             variant="secondary"
             size="lg"
@@ -138,21 +137,23 @@ export function DailyTarotDashboard() {
           >
             {isShuffling ? `${shuffleOption.label}中…` : '山札をシャッフル'}
           </Button>
-        )}
-      </TarotShuffleStage>
+        </TarotShuffleStage>
+      )}
 
       <div class={styles.actions}>
-        <Button
-          onClick={startReading}
-          size="lg"
-          disabled={controlsDisabled}
-        >
-          {phase === 'revealing'
-            ? 'カードを裏返しています…'
-            : phase === 'done'
-              ? 'もう一度引く（今日の結果を更新）'
-              : '今日の運勢を占う'}
-        </Button>
+        {phase === 'done' ? (
+          <a class={styles.redrawLink} href="#/tarot?draw=1">
+            もう一度引く
+          </a>
+        ) : (
+          <Button
+            onClick={startReading}
+            size="lg"
+            disabled={controlsDisabled}
+          >
+            {phase === 'revealing' ? 'カードを裏返しています…' : '今日の運勢を占う'}
+          </Button>
+        )}
         {phase === 'done' && (
           <a class={styles.detailLink} href="#/tarot">
             タロットページで詳しく見る

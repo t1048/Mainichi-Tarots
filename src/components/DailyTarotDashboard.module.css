@@ -59,6 +59,34 @@
   gap: var(--space-3);
 }
 
+.redrawLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 28px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  font-family: inherit;
+  letter-spacing: 0.05em;
+  text-decoration: none;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(120deg, var(--color-gold-soft) 0%, var(--color-gold) 50%, var(--color-gold-deep) 100%);
+  color: var(--color-bg-0);
+  box-shadow: 0 6px 18px rgba(212, 175, 55, 0.3);
+  transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.redrawLink:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(212, 175, 55, 0.45);
+}
+
+.redrawLink:active {
+  transform: translateY(0);
+}
+
 .detailLink {
   font-size: 0.85rem;
   color: var(--color-text-muted);

@@ -73,13 +73,20 @@ function buildInterpretation(cards: DrawnCard[]): string {
     .join('\n\n');
 }
 
+function tarotDrawIntentFromHash(): boolean {
+  const hash = window.location.hash;
+  const qIndex = hash.indexOf('?');
+  if (qIndex < 0) return false;
+  return new URLSearchParams(hash.slice(qIndex + 1)).get('draw') === '1';
+}
+
 export function Tarot() {
   const [mode, setMode] = useState<Mode>('one');
   const [phase, setPhase] = useState<Phase>('idle');
   const [drawn, setDrawn] = useState<DrawnCard[]>([]);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deckRemaining, setDeckRemaining] = useState(tarotDeckRemaining);
-  const [dailyRestoreSkipped, setDailyRestoreSkipped] = useState(false);
+  const [dailyRestoreSkipped, setDailyRestoreSkipped] = useState(tarotDrawIntentFromHash);
   const [shuffleStyle, setShuffleStyle] = useShuffleStyle();
   const shuffleOption = getShuffleStyleOption(shuffleStyle);
 
@@ -96,6 +103,11 @@ export function Tarot() {
       setPhase('done');
     },
   });
+
+  useEffect(() => {
+    if (!tarotDrawIntentFromHash()) return;
+    history.replaceState(null, '', '#/tarot');
+  }, []);
 
   const { save: saveReading, reset: resetSave } = useSaveOnce<DrawnCard[]>((cards) => {
     const detail: TarotHistoryDetail = {
