@@ -47,15 +47,15 @@ function CornerIndex({ card, accent, inverted }: { card: TarotCard; accent: stri
 
 function CornerOrnaments({ accent }: { accent: string }) {
   const corners = [
-    { x: 8, y: 8, sx: 1, sy: 1 },
-    { x: 92, y: 8, sx: -1, sy: 1 },
-    { x: 8, y: 152, sx: 1, sy: -1 },
-    { x: 92, y: 152, sx: -1, sy: -1 },
+    { x: 14, y: 8, rotate: 90 },
+    { x: 92, y: 14, rotate: 180 },
+    { x: 8, y: 146, rotate: 0 },
+    { x: 86, y: 152, rotate: -90 },
   ];
   return (
     <g stroke={accent} stroke-width={0.5} fill="none" opacity="0.65">
       {corners.map((c, i) => (
-        <g key={i} transform={`translate(${c.x} ${c.y}) scale(${c.sx} ${c.sy})`}>
+        <g key={i} transform={`translate(${c.x} ${c.y}) rotate(${c.rotate})`}>
           <path d="M0 0 L0 6 L6 6" />
         </g>
       ))}
