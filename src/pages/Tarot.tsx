@@ -4,8 +4,19 @@ import { CardSlot } from '../components/CardSlot';
 import { CopyResultButton } from '../components/CopyResultButton';
 import { ResultPanel } from '../components/ResultPanel';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { TarotCard } from '../components/TarotCard';
 import { TarotShuffleStage } from '../components/TarotShuffleStage';
-import { findCard, orientationLabel, POSITION_LABELS, type TarotCard, type Orientation, type Position } from '../data/tarot-meta';
+import {
+  ALL_CARDS,
+  findCard,
+  orientationLabel,
+  POSITION_LABELS,
+  SUIT_LABELS,
+  SUIT_ORDER,
+  type TarotCard as TarotCardType,
+  type Orientation,
+  type Position,
+} from '../data/tarot-meta';
 import { interpret } from '../data/templates';
 import { drawTarotOrientation } from '../lib/tarot-draw';
 import {
@@ -27,7 +38,7 @@ type Phase = 'idle' | 'deck-shuffling' | 'revealing' | 'done';
 const POSITIONS_3: NonNullable<Position>[] = ['past', 'present', 'future'];
 
 interface DrawnCard {
-  card: TarotCard;
+  card: TarotCardType;
   orientation: Orientation;
   position?: Position;
 }
@@ -78,6 +89,41 @@ function tarotDrawIntentFromHash(): boolean {
   const qIndex = hash.indexOf('?');
   if (qIndex < 0) return false;
   return new URLSearchParams(hash.slice(qIndex + 1)).get('draw') === '1';
+}
+
+function TarotGalleryItem({ card }: { card: TarotCardType }) {
+  const [orientation, setOrientation] = useState<Orientation>('upright');
+  const tone = orientation === 'upright' ? card.upright : card.reversed;
+  const toggleOrientation = () => {
+    setOrientation((o) => (o === 'upright' ? 'reversed' : 'upright'));
+  };
+
+  return (
+    <li class={styles.galleryItem}>
+      <button
+        type="button"
+        class={styles.galleryCardBtn}
+        onClick={toggleOrientation}
+        aria-label={`${card.nameJp}の${orientationLabel(orientation)}。タップで正逆を切り替え`}
+      >
+        <TarotCard card={card} orientation={orientation} size="sm" />
+      </button>
+      <div class={styles.galleryBody}>
+        <strong>{card.nameJp}</strong>
+        {card.nameEn && <small class={styles.muted}>{card.nameEn}</small>}
+        <span class={styles.orient}>
+          {orientationLabel(orientation)}
+          <span class={styles.orientHint}> · カードをタップで切り替え</span>
+        </span>
+        <div class={styles.keywords}>
+          {tone.keywords.map((k) => (
+            <span key={k}>{k}</span>
+          ))}
+        </div>
+        <p class={styles.summary}>{tone.summary}</p>
+      </div>
+    </li>
+  );
 }
 
 export function Tarot() {
@@ -356,6 +402,31 @@ export function Tarot() {
           }
         />
       )}
+
+      <section class={styles.gallery}>
+        <h2>タロット一覧</h2>
+        <p class={styles.muted}>78 枚すべての意味を一覧で確認できます。カードをタップすると正位置と逆位置の解説を切り替えられます。</p>
+
+        <div class={styles.galleryGroup}>
+          <h3 class={styles.galleryHeading}>大アルカナ</h3>
+          <ul class={styles.galleryList}>
+            {ALL_CARDS.filter((c) => c.arcana === 'major').map((card) => (
+              <TarotGalleryItem key={card.id} card={card} />
+            ))}
+          </ul>
+        </div>
+
+        {SUIT_ORDER.map((suit) => (
+          <div class={styles.galleryGroup} key={suit}>
+            <h3 class={styles.galleryHeading}>{SUIT_LABELS[suit].name}</h3>
+            <ul class={styles.galleryList}>
+              {ALL_CARDS.filter((c) => c.suit === suit).map((card) => (
+                <TarotGalleryItem key={card.id} card={card} />
+              ))}
+            </ul>
+          </div>
+        ))}
+      </section>
     </article>
   );
 }

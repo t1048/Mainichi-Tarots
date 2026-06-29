@@ -97,3 +97,123 @@
     grid-column: 1 / -1;
   }
 }
+
+.gallery {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.muted {
+  color: var(--color-text-muted);
+}
+
+.galleryGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.galleryHeading {
+  margin: 0;
+  font-size: 1rem;
+  font-family: var(--font-serif);
+  color: var(--color-gold-soft);
+  letter-spacing: 0.08em;
+}
+
+.galleryList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-2);
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+
+.galleryItem {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.galleryCardBtn {
+  flex-shrink: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+
+.galleryCardBtn:hover {
+  transform: scale(1.03);
+}
+
+.galleryCardBtn:focus-visible {
+  outline: 2px solid var(--color-gold-soft);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .galleryCardBtn:hover {
+    transform: none;
+  }
+}
+
+.galleryBody {
+  min-width: 0;
+  flex: 1;
+}
+
+.galleryItem strong {
+  display: block;
+  font-size: 0.95rem;
+  color: var(--color-gold-soft);
+  font-family: var(--font-serif);
+}
+
+.galleryItem small {
+  display: block;
+  font-size: 0.7rem;
+}
+
+.orient {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.7rem;
+  color: var(--color-purple-soft);
+  letter-spacing: 0.06em;
+}
+
+.orientHint {
+  color: var(--color-text-muted);
+}
+
+.keywords {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.keywords span {
+  font-size: 0.7rem;
+  padding: 1px 8px;
+  border-radius: var(--radius-pill);
+  background: var(--color-bg-2);
+  border: 1px solid var(--color-border);
+  color: var(--color-purple-soft);
+}
+
+.summary {
+  margin: var(--space-2) 0 0;
+  font-size: 0.8rem;
+  line-height: 1.55;
+  color: var(--color-text-muted);
+}
