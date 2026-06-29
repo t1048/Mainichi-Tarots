@@ -25,12 +25,14 @@ export function TarotCard({ card, orientation, size = 'md', revealed = true }: P
       class={`${styles.card} ${styles[size]} ${revealed ? styles.revealed : ''}`}
       style={{ width: `${w}px`, height: `${h}px` }}
     >
-      <div class={`${styles.inner} ${flipped ? styles.flipped : ''}`}>
-        <div class={styles.back} aria-hidden="true">
-          <CardBackSvg cardId={card.id} />
-        </div>
-        <div class={styles.front} style={{ ['--accent' as string]: accent }}>
-          <CardFrontSvg card={card} accent={accent} />
+      <div class={styles.inner}>
+        <div class={`${styles.orient} ${flipped ? styles.flipped : ''}`}>
+          <div class={styles.back} aria-hidden="true">
+            <CardBackSvg cardId={card.id} />
+          </div>
+          <div class={styles.front} style={{ ['--accent' as string]: accent }}>
+            <CardFrontSvg card={card} accent={accent} />
+          </div>
         </div>
       </div>
     </div>

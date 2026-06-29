@@ -21,6 +21,18 @@
   transform: rotateY(180deg);
 }
 
+.orient {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform var(--dur-slow) var(--ease-in-out);
+}
+
+.orient.flipped {
+  transform: rotate(180deg);
+}
+
 .front,
 .back {
   position: absolute;
@@ -41,8 +53,4 @@
   width: 100%;
   height: 100%;
   display: block;
-}
-
-.flipped {
-  transform: rotate(180deg);
 }
