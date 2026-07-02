@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { Button } from './Button';
+import { CopyResultButton } from './CopyResultButton';
 import { CardSlot } from './CardSlot';
 import { ResultPanel } from './ResultPanel';
 import { TarotShuffleStage } from './TarotShuffleStage';
@@ -19,6 +20,7 @@ import {
 } from '../lib/history';
 import { loadTodayDaily, saveTodayDaily, type DailyTarot } from '../lib/daily-fortune';
 import { getShuffleStyleOption, shuffleStyleDurationMs, useShuffleStyle } from '../lib/tarot-shuffle';
+import { formatTarotReading } from '../lib/tarot-reading-text';
 import { useSaveOnce } from '../lib/use-save-once';
 import styles from './DailyTarotDashboard.module.css';
 
@@ -107,6 +109,11 @@ export function DailyTarotDashboard() {
     return interpret(card, drawn.orientation, 'today');
   }, [card, drawn, phase]);
 
+  const readingText = useMemo(() => {
+    if (phase !== 'done' || !card || !drawn) return '';
+    return formatTarotReading('one', [{ card, orientation: drawn.orientation, position: 'today' }]);
+  }, [phase, card, drawn]);
+
   const revealed = phase === 'revealing' || phase === 'done';
   const isShuffling = phase === 'shuffling';
   const showDeck = phase === 'idle' || isShuffling;
@@ -155,9 +162,12 @@ export function DailyTarotDashboard() {
           </Button>
         )}
         {phase === 'done' && (
-          <a class={styles.detailLink} href="#/tarot">
-            タロットページで詳しく見る
-          </a>
+          <>
+            <CopyResultButton text={readingText} label="結果をコピー（AI 解説用）" />
+            <a class={styles.detailLink} href="#/tarot">
+              タロットページで詳しく見る
+            </a>
+          </>
         )}
       </div>
 
