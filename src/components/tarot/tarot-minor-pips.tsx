@@ -31,7 +31,7 @@ export function MinorPipsAbsolute({ card }: { card: TarotCard }) {
   );
 }
 
-/** コート札 11〜14: 中央に大アイコン + コート記号 */
+/** コート札 11〜14: すべて同じ安全領域に人物と紋章を収める。 */
 export function MinorCourtGlyph({ card }: { card: TarotCard }) {
   const suit = card.suit;
   if (!suit) return null;
@@ -40,10 +40,17 @@ export function MinorCourtGlyph({ card }: { card: TarotCard }) {
 
   return (
     <g>
-      <rect x="-18" y="-28" width="36" height="56" fill="none" stroke={ACCENT} stroke-width={0.5} rx="3" opacity="0.5" />
-      <SuitIcon suit={suit} variant="full" scale={0.85} />
+      <ellipse cx="0" cy="-7" rx="23" ry="31" fill={ACCENT} fill-opacity="0.08" />
+      <path d="M-22 23 Q0 12 22 23" fill="none" stroke={ACCENT} stroke-width={0.55} opacity="0.65" />
+      <circle cy="-14" r="6" fill={ACCENT} fill-opacity="0.32" stroke={ACCENT} stroke-width={0.75} />
+      <path d="M-10 18 Q-8 -5 0 -7 Q8 -5 10 18 Z" fill={ACCENT} fill-opacity="0.23" stroke={ACCENT} stroke-width={0.8} stroke-linejoin="round" />
+      <path d="M-14 3 L-5 -2 M14 3 L5 -2" fill="none" stroke={ACCENT} stroke-width={0.8} stroke-linecap="round" />
+      <g transform="translate(0 2)">
+        <SuitIcon suit={suit} variant="pip" scale={0.7} />
+      </g>
+      <path d="M-6 -23 Q0 -29 6 -23" fill="none" stroke={ACCENT} stroke-width={0.65} />
       {courtLabel && (
-        <text y="32" text-anchor="middle" font-family={SERIF} font-size="10" fill={ACCENT} font-weight="bold">
+        <text y="32" text-anchor="middle" font-family={SERIF} font-size="8" fill={ACCENT} font-weight="bold" letter-spacing="2">
           {courtLabel}
         </text>
       )}

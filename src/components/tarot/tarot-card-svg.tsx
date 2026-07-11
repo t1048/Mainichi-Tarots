@@ -118,6 +118,7 @@ function CardSymbol({ card }: { card: TarotCard }) {
   if (card.arcana === 'major') {
     return (
       <g transform="translate(50 80)">
+        <MajorBackdrop />
         <MajorGlyph card={card} />
       </g>
     );
@@ -130,6 +131,33 @@ function CardSymbol({ card }: { card: TarotCard }) {
     );
   }
   return <MinorPipsAbsolute card={card} />;
+}
+
+function MajorBackdrop() {
+  return (
+    <g fill="none" stroke="var(--accent, var(--color-gold))" pointer-events="none">
+      <ellipse cx="0" cy="1" rx="25" ry="32" fill="var(--accent, var(--color-gold))" fill-opacity="0.07" stroke-width="0.45" opacity="0.7" />
+      <path d="M-23 23 Q0 16 23 23" stroke-width="0.55" opacity="0.7" />
+      <path d="M-18 -22 L-15 -19 M18 -22 L15 -19" stroke-width="0.55" opacity="0.55" />
+    </g>
+  );
+}
+
+function IllustrationFrame({ accent, major }: { accent: string; major: boolean }) {
+  return (
+    <g fill="none" stroke={accent} pointer-events="none">
+      <rect x="11" y="31" width="78" height="94" rx="4" stroke-width="0.5" opacity="0.5" />
+      <path d="M17 36 H83 M17 120 H83" stroke-width="0.4" opacity="0.45" />
+      {major && (
+        <>
+          <circle cx="18" cy="40" r="1" fill={accent} opacity="0.6" stroke="none" />
+          <circle cx="82" cy="40" r="1" fill={accent} opacity="0.6" stroke="none" />
+          <circle cx="18" cy="116" r="1" fill={accent} opacity="0.6" stroke="none" />
+          <circle cx="82" cy="116" r="1" fill={accent} opacity="0.6" stroke="none" />
+        </>
+      )}
+    </g>
+  );
 }
 
 export function CardFrontSvg({ card, accent }: { card: TarotCard; accent: string }) {
@@ -169,7 +197,7 @@ export function CardFrontSvg({ card, accent }: { card: TarotCard; accent: string
 
       <rect x="3" y="3" width="94" height="154" fill="none" stroke={accent} stroke-width={0.7} rx="4" />
       <rect x="6" y="6" width="88" height="148" fill="none" stroke={accent} stroke-width={0.35} rx="2" opacity="0.65" />
-      <rect x="9" y="28" width="82" height="96" fill="none" stroke={accent} stroke-width={0.25} rx="2" opacity="0.35" stroke-dasharray="2 2" />
+      <IllustrationFrame accent={accent} major={card.arcana === 'major'} />
 
       <CornerOrnaments accent={accent} />
       <CornerIndex card={card} accent={accent} />
@@ -182,6 +210,7 @@ export function CardFrontSvg({ card, accent }: { card: TarotCard; accent: string
       <CardSymbol card={card} />
 
       <g transform="translate(50 138)">
+        <path d="M-29 -5 H29" stroke={accent} stroke-width="0.35" opacity="0.5" />
         <text text-anchor="middle" font-family={SERIF} font-size="6.5" fill="#3a2a14" letter-spacing="0.5">
           {card.nameJp}
         </text>
